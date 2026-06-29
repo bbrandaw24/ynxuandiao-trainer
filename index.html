@@ -230,10 +230,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
   <!-- ========== SOCRATIC MODE ========== -->
   <div id="socraticPanel" class="panel">
     <div class="card">
-      <div class="card-title">💡 苏格拉底提问模式</div>
-      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">选择知识点主题，我会通过追问的方式引导你深入理解，而不是直接给答案。检验你是否真的掌握了。</p>
-      <div class="cat-filter" id="socTopicFilter"></div>
-      <div id="socTopicList" class="soc-topic-list"></div>
+      <div class="card-title">💡 错题苏格拉底提问</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">从你的错题中选择一道，我会追问你：为什么选这个答案？正确思路是什么？帮你彻底搞懂而不是死记答案。</p>
+      <div id="socErrorList" class="soc-topic-list"></div>
       <div id="socChatArea" style="display:none;">
         <div class="socratic-chat" id="socChatLog"></div>
         <div class="socratic-input-bar">
@@ -243,7 +242,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
         </div>
       </div>
       <div id="socStartHint" style="text-align:center;padding:30px;color:var(--text-secondary);">
-        👆 选择上方一个主题开始苏格拉底式提问
+        👆 下方是你的错题列表，点击一道开始苏格拉底式追问
       </div>
     </div>
   </div>
@@ -489,9 +488,8 @@ function init() {
   const tabs = document.getElementById('categoryTabs');
   tabs.innerHTML = cats.map(c => `<button class="nav-tab${c===state.currentCat?' active':''}" onclick="switchCategory('${c}')">${c}</button>`).join('');
 
-  // Init socratic topics
-  const stf = document.getElementById('socTopicFilter');
-  stf.innerHTML = cats.map(c => `<span class="cat-tag${c===state.currentCat?' active':''}" onclick="switchSocCategory('${c}')">${c}</span>`).join('');
+  // Init socratic — show wrong questions
+  refreshSocErrors();
 
   // Init stats
   cats.forEach(c => {
@@ -627,7 +625,7 @@ function switchMode(mode) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   if (mode === 'quiz') document.getElementById('quizPanel').classList.add('active');
-  else if (mode === 'socratic') document.getElementById('socraticPanel').classList.add('active');
+  else if (mode === 'socratic') { document.getElementById('socraticPanel').classList.add('active'); refreshSocErrors(); }
   else if (mode === 'analysis') { document.getElementById('analysisPanel').classList.add('active'); setTimeout(renderAnalysis, 200); }
 }
 
@@ -660,6 +658,7 @@ function updateErrorList() {
       </div>
     </div>`
   ).join('');
+  refreshSocErrors();
 }
 
 function toggleErrorDetail(idx) {
@@ -801,36 +800,35 @@ function clearAllStats() {
   updateErrorList();
 }
 
-// ===================== SOCRATIC MODE =====================
-function switchSocCategory(cat) {
-  state.currentCat = cat;
-  document.querySelectorAll('#socTopicFilter .cat-tag').forEach(t => t.classList.toggle('active', t.textContent===cat));
-  generateSocTopics(cat);
+// ===================== SOCRATIC MODE — BASED ON YOUR WRONG ANSWERS =====================
+function refreshSocErrors() {
+  const errors = state.wrongQuestions;
+  const container = document.getElementById('socErrorList');
+  if (errors.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;border:1px dashed var(--border);border-radius:10px;">暂无错题，先去刷题模式做几道题吧！做错的题会自动出现在这里，供你逐一深挖。</p>';
+    return;
+  }
+  const labels = ['A','B','C','D'];
+  container.innerHTML = errors.map((e,i) => `<div class="error-item" onclick="startSocraticFromError(${i})">
+    <div class="error-q" style="display:flex;align-items:center;gap:8px;">
+      <span class="category-badge badge-err">${e.cat}</span>
+      <span>${e.q.length>60?e.q.slice(0,60)+'...':e.q}</span>
+    </div>
+    <div class="error-detail" style="margin-top:4px;">
+      你选了 <span class="wrong-ans">${labels[e.selected]}</span>
+      &nbsp;|&nbsp; 正确答案 <span class="right-ans">${labels[e.correct]}</span>
+      &nbsp;|&nbsp; 💬 点击开始苏格拉底追问
+    </div>
+  </div>`).join('');
 }
 
-function generateSocTopics(cat) {
-  const topics = {
-    '新思想': ['中国特色社会主义最本质特征','五位一体总体布局','四个全面战略布局','新发展理念','人类命运共同体','全过程人民民主','新质生产力'],
-    '全国时政': ['十五五规划要点','2025政府工作报告','二十届四中全会精神','新质生产力','高质量发展','金融强国建设','人工智能+'],
-    '云南省情': ['3815战略目标','中老铁路战略意义','三张牌升级三大经济','25个边境县','民族团结示范区','云南三江并流','高原特色农业'],
-    '党史': ['扎西会议的历史意义','遵义会议','延安整风','十一届三中全会','中共一大','古田会议','二十大'],
-    '马原': ['实践是检验真理的唯一标准','量变与质变','矛盾的对立统一','商品二因素','剩余价值论','感性认识与理性认识','经济基础与上层建筑'],
-    '法律': ['宪法最高法律效力','民法典自甘风险规则','行政复议集中管辖','无过错责任原则','法定继承顺序','首违不罚'],
-    '科技文史地理': ['云南地形特征','天宫空间站','元谋人遗址','茶马古道','三江并流','世界文化遗产哈尼梯田','云南世居少数民族'],
-    '言语理解': ['主旨概括技巧','逻辑填空语境分析','语句排序方法','语句衔接原则','细节理解陷阱','词句理解'],
-    '判断推理': ['定义判断核心方法','类比推理逻辑关系','削弱型论证','加强型论证','三段论推理','因果推理'],
-    '数量关系': ['工程问题赋值法','经济利润问题','行程问题','容斥问题','溶液问题','牛吃草问题'],
-    '资料分析': ['增长率计算','基期量计算','比重问题','平均数增长率','速算技巧','倍数关系']
-  };
-  const topicList = topics[cat] || ['知识点1','知识点2','知识点3','知识点4'];
-  document.getElementById('socTopicList').innerHTML = topicList.map(t =>
-    `<span class="soc-topic" onclick="startSocratic('${cat}','${t}')">${t}</span>`
-  ).join('');
-}
+let socraticErrorIdx = -1;
 
-function startSocratic(cat, topic) {
+function startSocraticFromError(idx) {
+  const e = state.wrongQuestions[idx];
+  if (!e) return;
+  socraticErrorIdx = idx;
   state.socraticActive = true;
-  state.socraticTopic = topic;
   state.socraticMessages = [];
   state.socraticQuestionCount = 0;
   document.getElementById('socChatArea').style.display = 'block';
@@ -838,172 +836,49 @@ function startSocratic(cat, topic) {
   document.getElementById('socChatLog').innerHTML = '';
   document.getElementById('socInput').value = '';
   document.getElementById('socInput').focus();
-
-  // First question
-  const firstQ = getFirstSocraticQuestion(cat, topic);
-  addSocraticMessage(firstQ, 'ai');
-}
-
-function getFirstSocraticQuestion(cat, topic) {
-  // Generate a dynamic first question based on topic
-  const intros = {
-    '新思想': `好的，我们来讨论"${topic}"。先问一个基本的：你能用自己的话解释一下"${topic}"的核心含义是什么吗？`,
-    '全国时政': `关于"${topic}"，我们先从最基础的说起：这个概念提出的背景是什么？你能简要说明吗？`,
-    '云南省情': `"${topic}"是云南发展的重要战略。首先告诉我，这个战略包含哪些核心内容？不需要背课本，用自己的理解说。`,
-    '党史': `我们来探讨"${topic}"。先说说，这个事件/会议发生在什么历史背景下？当时面临的主要问题是什么？`,
-    '马原': `好，我们来深挖"${topic}"。首先，这个概念的基本内涵你理解吗？用日常生活的例子说明一下。`,
-    '法律': `关于"${topic}"，我们先从最核心的谈起：这个法律制度设计的目的是什么？它要保护什么？`,
-    '科技文史地理': `"${topic}"这个知识点涵盖了哪些方面？你先大致说说你的理解。`,
-    '言语理解': `好，关于"${topic}"，我们先说说这类题型的核心解题思路是什么？`,
-    '判断推理': `"${topic}"这类题目考察的是什么逻辑能力？先说说你的理解。`,
-    '数量关系': `"${topic}"这种题型的核心公式是什么？先写出来或说出来。`,
-    '资料分析': `"${topic}"的速算技巧有哪些？你先列举一下。`
-  };
-  return intros[cat] || `我们来探讨"${topic}"。首先，请说说你对这个概念的基本理解。`;
+  const l = ['A','B','C','D'];
+  addSocraticMessage(`我们来深挖这道你做错的题：\n\n📌 [${e.cat}] ${e.q}\n\n你当时选了 ${l[e.selected]}（${e.options[e.selected]}）\n正确答案是 ${l[e.correct]}（${e.options[e.correct]}）\n\n先说说看，你当时为什么选了 ${l[e.selected]}？是哪个关键词让你觉得它是对的？`, 'ai');
 }
 
 function addSocraticMessage(text, sender) {
   state.socraticMessages.push({text, sender});
   const log = document.getElementById('socChatLog');
-  log.innerHTML += `<div class="socratic-msg socratic-${sender}">${text}</div>`;
+  log.innerHTML += `<div class="socratic-msg socratic-${sender}"><pre style="white-space:pre-wrap;font-family:inherit;margin:0;line-height:1.7;">${text}</pre></div>`;
   log.scrollTop = log.scrollHeight;
 }
 
 function sendSocraticReply() {
   const input = document.getElementById('socInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  addSocraticMessage(text, 'user');
+  const txt = input.value.trim();
+  if (!txt) return;
+  addSocraticMessage(txt, 'user');
   input.value = '';
-
   state.socraticQuestionCount++;
-
-  // Generate follow-up question based on conversation depth
-  const followUp = getFollowUpQuestion(state.currentCat, state.socraticTopic, state.socraticQuestionCount, text);
-  setTimeout(() => addSocraticMessage(followUp, 'ai'), 500);
-}
-
-function getFollowUpQuestion(cat, topic, round, lastAnswer) {
-  if (round >= 5) {
-    return '很好！通过这轮提问，你对该知识点的理解已经比较深入了。总结一下：' +
-      getSummary(cat, topic) +
-      ' 还想继续深入探讨吗？还是换个话题？';
+  const e = state.wrongQuestions[socraticErrorIdx];
+  const l = ['A','B','C','D'];
+  const r = state.socraticQuestionCount;
+  let reply;
+  if (r >= 6) {
+    reply = `很好！经过这轮深挖，总结一下：\n\n✅ 正确答案是 ${l[e.correct]}（${e.options[e.correct]}）\n📖 解析：${e.explanation}\n\n换一道错题继续？还是回去刷题？`;
+  } else {
+    const qs = [
+      `明白了。那现在回头再看，你觉得 ${l[e.correct]}（${e.options[e.correct]}）凭什么是对的？和 ${l[e.selected]}（${e.options[e.selected]}）的核心区别在哪？`,
+      `对。下次遇到类似题，怎么避免再踩坑？这道题给你什么教训？`,
+      `说得好。那我们挖深一层：${e.explanation.split('。')[0]}。你之前怎么理解这个知识点的？它跟哪些知识点容易混淆？`,
+      `不错。换一个角度：假设题干不变，但把选项全换了，你怎么用知识点本身来解题，而不是靠排除法？`,
+      `最后——考场120分钟100题，你当时花多久做这题？对 ${e.cat} 这类题，你的时间分配策略是什么？`
+    ];
+    reply = qs[Math.min(r-1, qs.length-1)];
   }
-
-  const followUps = {
-    '新思想': [
-      '你说得很好。那"${topic}"与我们日常生活有什么关系？能举个例子吗？',
-      '联系得很好。但还有个关键点：${topic}的理论创新在哪里？跟过去的提法有什么不同？',
-      '理解正确。那${topic}在实践中如何落地？遇到的主要困难是什么？',
-      '说得有道理。那你能对比一下，这个理念与西方类似概念的本质区别是什么？'
-    ],
-    '全国时政': [
-      '你说得不错。那这个政策与"十五五"规划的衔接体现在哪里？',
-      '好的，那推进${topic}过程中，当前面临的最大挑战是什么？',
-      '很到位。那从老百姓的角度看，${topic}会带来哪些实际变化？',
-      '更深一层想：${topic}与高质量发展之间的关系是什么？'
-    ],
-    '云南省情': [
-      '说得对。那这个战略在云南各州市的落实有什么差异？能举例吗？',
-      '不错。那${topic}与云南"三大经济"如何相互促进？',
-      '理解正确。那${topic}面临的制约因素有哪些？如何破解？',
-      '好。那从这个角度看，云南与周边省份（比如贵州、广西）的竞争优劣势是什么？'
-    ],
-    '党史': [
-      '基本准确。那你能再想想，${topic}之前发生了什么、之后又有什么后续影响？',
-      '对。那${topic}中体现的哪些原则对我们今天仍有指导意义？',
-      '说得不错。那如果放在更长的历史脉络中，${topic}处于什么样的地位？',
-      '好问题。那你能把${topic}与当前全面从严治党的要求联系起来吗？'
-    ],
-    '马原': [
-      '例子贴切。那这个原理的反面是什么？如果违背了会有什么后果？',
-      '对。那这个哲学原理在现实工作中有哪些应用？能举个例子吗？',
-      '很好。那${topic}与另一个相关概念（比如${getRelatedConcept(cat)}）有什么区别和联系？',
-      '不错。那我们来做个思想实验：如果这个原理不成立，世界会是什么样？'
-    ],
-    '法律': [
-      '基本理解正确。那这个规定有没有例外情形？什么情况下不适用？',
-      '好的。那${topic}在实际案例中是如何适用的？能想一个场景吗？',
-      '对。那这个法律制度与其他相关制度如何衔接？比如${topic}与行政诉讼的关系？',
-      '很好。那反思一下：这个制度设计有没有需要完善的地方？可能存在什么问题？'
-    ],
-    '科技文史地理': [
-      '说得不错。那这个知识点与云南的地理/历史/文化特征有什么内在联系？',
-      '对。那${topic}背后的科学原理/历史逻辑是什么？为什么会这样？',
-      '很好。那${topic}对云南的经济社会发展有哪些实际影响？',
-      '不错。那我们可以反过来思考：如果没有${topic}，云南会有什么不同？'
-    ],
-    '言语理解': [
-      '思路对。那如果遇到两难选项，你的排除原则是什么？',
-      '好的。那你有没有总结出这类题型的"陷阱"特征？常见错误选项有什么规律？',
-      '嗯。那实际做题时，你一般用多少时间做完一道言语题？如何提速？',
-      '好。那言语理解与其他模块（如判断推理）的解题思维有什么异同？'
-    ],
-    '判断推理': [
-      '好的。那这个题型中，最常见的干扰项设置方式是什么？',
-      '对。那你在做这类题时，通常按照什么步骤来？能不能归纳一下？',
-      '嗯。那这道题如果变个条件，答案会变吗？比如把"削弱"改成"加强"。',
-      '不错。那你觉得这个知识点在2026年行测中可能怎么考？能预测一下吗？'
-    ],
-    '数量关系': [
-      '公式对了。那你能举个实际生活中的例子来应用这个公式吗？',
-      '好。那如果题目条件变一下（比如多人合作变成轮流工作），思路怎么调整？',
-      '对的。那这个题型在限时条件下，你一般用哪种解法最快？',
-      '很好。那这个知识点与其他数量关系题型有什么交叉？比如工程和行程的结合。'
-    ],
-    '资料分析': [
-      '不错。那在时间紧张的情况下，你会优先使用哪种速算方法？',
-      '好的。那资料分析中容易掉进的"时间陷阱"和"单位陷阱"有哪些？',
-      '对。那如果选项差距很小，你的计算策略是什么？',
-      '嗯。那综合来看，资料分析最高效的做题顺序和时间分配是怎样的？'
-    ]
-  };
-
-  const qs = followUps[cat] || [
-    '你说得不错，但还可以更深入一些。${topic}的本质特征是什么？',
-    '好。那么${topic}与其他相关概念有什么区别和联系？',
-    '对。但我们需要逆向思维：如果${topic}不成立，会怎样？',
-    '很好。总结一下你刚才说的，用最简洁的话概括${topic}的核心。'
-  ];
-
-  const idx = Math.min(round - 1, qs.length - 1);
-  return qs[idx].replace(/\$\{topic\}/g, topic);
-}
-
-function getRelatedConcept(cat) {
-  const map = {
-    '马原': '否定之否定规律',
-    '法律': '过错责任原则',
-    '科技文史地理': '云南生物多样性',
-  };
-  return map[cat] || '相关概念';
-}
-
-function getSummary(cat, topic) {
-  const summaries = {
-    '新思想': `${topic}是习近平新时代中国特色社会主义思想的重要组成部分，其核心在于坚持党的领导、以人民为中心，推动中国式现代化。关键要理解其理论创新和与实践的结合。`,
-    '全国时政': `${topic}是当前国家战略的核心内容，与"十五五"规划、高质量发展一脉相承。重点把握政策背景、主要内容、实践路径三个层次。`,
-    '云南省情': `${topic}是云南发展的关键战略/资源，与"3815"战略、"三大经济"紧密相连。重点理解其对云南的独特意义和落实路径。`,
-    '党史': `${topic}是党的历史上的重要节点，关键要把握其前因后果、历史意义和对当下的启示。注意长时段的历史脉络分析。`,
-    '马原': `${topic}是马克思主义基本原理的核心内容，重点掌握其定义、辩证关系及现实应用。考试常考名言与原理的对应。`,
-    '法律': `${topic}是法律常识的高频考点，关键要理解其设计目的、适用条件和例外情形。注意2024-2025年新法修订内容。`,
-    '科技文史地理': `${topic}是科技文史地理的综合考点，既要记事实也要理解背后的逻辑关联。云南特色（地形、少数民族、文化遗产）是重点。`,
-    '言语理解': `${topic}的解题关键在于把握文段结构、逻辑关系和作者意图。注意排除绝对化选项和无中生有的干扰项。`,
-    '判断推理': `${topic}的核心是逻辑关系的准确识别和论证结构的分析。注意区分削弱/加强的不同力度和类比中的逻辑关系类型。`,
-    '数量关系': `${topic}的核心是公式掌握和速算技巧。注意赋值法、方程法、十字交叉等方法的灵活运用。`,
-    '资料分析': `${topic}的要点是速算公式和避坑技巧。注意时间、单位、概念三大陷阱，掌握截位直除和特征数字法。`
-  };
-  return summaries[cat] || `${topic}是考试重点，需要从定义、特征、应用三个层面全面掌握。`;
+  setTimeout(() => addSocraticMessage(reply, 'ai'), 400);
 }
 
 function endSocraticSession() {
-  state.socraticActive = false;
+  state.socraticActive = false; socraticErrorIdx = -1;
   document.getElementById('socChatArea').style.display = 'none';
   document.getElementById('socStartHint').style.display = 'block';
   document.getElementById('socChatLog').innerHTML = '';
-  state.socraticMessages = [];
-  state.socraticQuestionCount = 0;
+  state.socraticMessages = []; state.socraticQuestionCount = 0;
 }
 
 // ===================== COLOR HELPERS =====================
