@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云南定向选调 · 综合训练系统</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --primary: #1a73e8;
+  --primary-light: #e8f0fe;
+  --success: #0f9d58;
+  --danger: #d93025;
+  --warning: #f9ab00;
+  --text: #202124;
+  --text-secondary: #5f6368;
+  --border: #dadce0;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.container { max-width:1200px; margin:0 auto; padding:20px; }
+
+/* Header */
+.header { background:linear-gradient(135deg,#1a73e8,#1557b0); color:#fff; border-radius:0 0 var(--radius) var(--radius); padding:30px 20px; margin-bottom:24px; }
+.header h1 { font-size:28px; margin-bottom:4px; }
+.header p { opacity:.85; font-size:14px; }
+.header-sub { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:13px; opacity:.75; }
+
+/* Nav Tabs */
+.nav-tabs { display:flex; gap:4px; margin-bottom:20px; flex-wrap:wrap; background:var(--card); border-radius:var(--radius); padding:6px; box-shadow:var(--shadow); }
+.nav-tab { padding:10px 18px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:14px; color:var(--text-secondary); transition:all .2s; white-space:nowrap; }
+.nav-tab:hover { background:var(--primary-light); color:var(--primary); }
+.nav-tab.active { background:var(--primary); color:#fff; font-weight:500; }
+
+/* Panels */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* Cards */
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; margin-bottom:16px; }
+.card-title { font-size:18px; font-weight:600; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+
+/* Question area */
+.question-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.category-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500; }
+.badge-new { background:#e8f0fe; color:#1a73e8; }
+.badge-err { background:#fce8e6; color:#d93025; }
+.badge-soc { background:#fef7e0; color:#f9ab00; }
+.progress-info { font-size:13px; color:var(--text-secondary); }
+
+.options-grid { display:grid; gap:10px; }
+.option-item { padding:14px 16px; border:2px solid var(--border); border-radius:10px; cursor:pointer; transition:all .2s; font-size:15px; display:flex; align-items:center; gap:10px; }
+.option-item:hover:not(.disabled) { border-color:var(--primary); background:var(--primary-light); }
+.option-item.selected { border-color:var(--primary); background:var(--primary-light); }
+.option-item.correct { border-color:var(--success) !important; background:#e6f4ea !important; }
+.option-item.wrong { border-color:var(--danger) !important; background:#fce8e6 !important; }
+.option-item.disabled { cursor:default; opacity:.7; }
+.option-label { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--bg); font-weight:600; font-size:13px; flex-shrink:0; }
+.option-item.selected .option-label { background:var(--primary); color:#fff; }
+.option-item.correct .option-label { background:var(--success); color:#fff !important; }
+.option-item.wrong .option-label { background:var(--danger); color:#fff !important; }
+
+.action-bar { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.btn { padding:10px 24px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:500; transition:all .2s; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:#1557b0; }
+.btn-secondary { background:var(--bg); color:var(--text); }
+.btn-secondary:hover { background:var(--border); }
+.btn-success { background:var(--success); color:#fff; }
+.btn-success:hover { background:#0b8043; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { background:#b3261e; }
+.btn-sm { padding:6px 14px; font-size:13px; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Explanation */
+.explanation-box { margin-top:16px; padding:16px; border-radius:10px; background:#f8f9fa; border-left:4px solid var(--primary); display:none; }
+.explanation-box.show { display:block; }
+
+/* Stats Dashboard */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+.stat-card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); text-align:center; }
+.stat-value { font-size:28px; font-weight:700; }
+.stat-label { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+.stat-value.green { color:var(--success); }
+.stat-value.red { color:var(--danger); }
+.stat-value.blue { color:var(--primary); }
+
+/* Error list */
+.error-item { padding:14px; border:1px solid var(--border); border-radius:8px; margin-bottom:10px; cursor:pointer; transition:all .2s; }
+.error-item:hover { background:var(--primary-light); }
+.error-q { font-weight:500; margin-bottom:4px; font-size:14px; }
+.error-detail { font-size:13px; color:var(--text-secondary); }
+.error-detail span.wrong-ans { color:var(--danger); font-weight:600; }
+.error-detail span.right-ans { color:var(--success); font-weight:600; }
+
+/* Diagram container for quiz */
+.chart-container { max-width:100%; height:auto; }
+
+/* Socratic Mode */
+.socratic-chat { max-height:400px; overflow-y:auto; padding:12px; background:#f8f9fa; border-radius:10px; margin-bottom:12px; }
+.socratic-msg { margin-bottom:12px; padding:10px 14px; border-radius:10px; max-width:85%; font-size:14px; }
+.socratic-ai { background:var(--primary); color:#fff; margin-right:auto; border-bottom-left-radius:4px; }
+.socratic-user { background:var(--bg); margin-left:auto; border-bottom-right-radius:4px; border:1px solid var(--border); }
+.socratic-input-bar { display:flex; gap:8px; }
+.socratic-input-bar input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:8px; font-size:14px; outline:none; }
+.socratic-input-bar input:focus { border-color:var(--primary); }
+
+/* Category filter */
+.cat-filter { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.cat-tag { padding:6px 14px; border-radius:20px; border:1px solid var(--border); cursor:pointer; font-size:13px; transition:all .2s; background:var(--card); }
+.cat-tag:hover { border-color:var(--primary); color:var(--primary); }
+.cat-tag.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* Error detail panel */
+.derived-questions { margin-top:12px; padding:12px; background:var(--primary-light); border-radius:8px; }
+.derived-q { padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.derived-q:last-child { border-bottom:none; }
+
+/* Exam structure viz */
+.viz-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:768px) { .viz-grid { grid-template-columns:1fr; } }
+.viz-card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+.viz-card h3 { font-size:15px; margin-bottom:12px; color:var(--text-secondary); }
+
+/* Socratic topics */
+.soc-topic-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.soc-topic { padding:8px 16px; border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:13px; transition:all .2s; background:var(--card); }
+.soc-topic:hover { border-color:var(--primary); color:var(--primary); }
+.soc-topic.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* Mode selector */
+.mode-selector { display:flex; gap:8px; margin-bottom:20px; }
+.mode-btn { flex:1; padding:12px; text-align:center; border:2px solid var(--border); border-radius:10px; cursor:pointer; transition:all .2s; background:var(--card); }
+.mode-btn.active { border-color:var(--primary); background:var(--primary-light); }
+.mode-btn-icon { font-size:24px; margin-bottom:4px; }
+.mode-btn-label { font-size:13px; font-weight:500; }
+.mode-btn-desc { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+
+/* Timeline */
+.timeline { position:relative; padding:0; }
+.timeline::before { content:''; position:absolute; left:20px; top:0; bottom:0; width:2px; background:var(--border); }
+.tl-item { position:relative; padding:12px 0 12px 50px; }
+.tl-dot { position:absolute; left:14px; top:18px; width:14px; height:14px; border-radius:50%; background:var(--primary); border:3px solid var(--primary-light); }
+.tl-year { font-weight:700; font-size:16px; color:var(--primary); }
+.tl-detail { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+
+/* Responsive */
+@media(max-width:600px) {
+  .header h1 { font-size:22px; }
+  .nav-tab { padding:8px 12px; font-size:13px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🗿 云南定向选调 · 综合训练系统</h1>
+    <p>基于2015-2026年真题考情研究 · 全客观题模拟训练</p>
+    <div class="header-sub">
+      <span>📊 2026年考情：行测50题 + 公基50题 | 全选择题 | 120分钟</span>
+      <span id="todayDisplay"></span>
+    </div>
+  </div>
+
+  <!-- Mode Selector -->
+  <div class="mode-selector" id="modeSelector">
+    <div class="mode-btn active" data-mode="quiz" onclick="switchMode('quiz')">
+      <div class="mode-btn-icon">📝</div>
+      <div class="mode-btn-label">刷题模式</div>
+      <div class="mode-btn-desc">按模块刷题 · 即时反馈</div>
+    </div>
+    <div class="mode-btn" data-mode="socratic" onclick="switchMode('socratic')">
+      <div class="mode-btn-icon">💡</div>
+      <div class="mode-btn-label">苏格拉底提问</div>
+      <div class="mode-btn-desc">追问式考察 · 深挖理解</div>
+    </div>
+    <div class="mode-btn" data-mode="analysis" onclick="switchMode('analysis')">
+      <div class="mode-btn-icon">📈</div>
+      <div class="mode-btn-label">考情分析</div>
+      <div class="mode-btn-desc">历年结构变化 · 数据可视化</div>
+    </div>
+  </div>
+
+  <!-- ========== QUIZ MODE ========== -->
+  <div id="quizPanel" class="panel active">
+    <div class="nav-tabs" id="categoryTabs"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-value blue" id="totalCount">0</div><div class="stat-label">总题数</div></div>
+      <div class="stat-card"><div class="stat-value green" id="correctCount">0</div><div class="stat-label">正确</div></div>
+      <div class="stat-card"><div class="stat-value red" id="wrongCount">0</div><div class="stat-label">错误</div></div>
+      <div class="stat-card"><div class="stat-value blue" id="accuracyPct">0%</div><div class="stat-label">正确率</div></div>
+    </div>
+
+    <!-- Question Area -->
+    <div class="card" id="questionCard">
+      <div class="question-header">
+        <span><span class="category-badge badge-new" id="qCategory">加载中...</span></span>
+        <span class="progress-info" id="qProgress">第 0/0 题</span>
+      </div>
+      <div id="qContent">
+        <p style="color:var(--text-secondary);text-align:center;padding:40px 0;">选择上方模块开始刷题</p>
+      </div>
+      <div id="optionArea"></div>
+      <div class="action-bar" id="actionBar" style="display:none;">
+        <button class="btn btn-primary" onclick="submitAnswer()">提交答案</button>
+        <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllStats()" style="margin-left:auto;">重置统计</button>
+      </div>
+      <div class="explanation-box" id="explanationBox">
+        <strong>解析：</strong><span id="explanationText"></span>
+      </div>
+    </div>
+
+    <!-- Error List -->
+    <div class="card">
+      <div class="card-title">❌ 错题本 <span style="font-size:13px;font-weight:400;color:var(--text-secondary);" id="errCountLabel">(0)</span></div>
+      <div id="errorList"><p style="color:var(--text-secondary);text-align:center;padding:20px 0;">暂无错题，继续加油！</p></div>
+    </div>
+  </div>
+
+  <!-- ========== SOCRATIC MODE ========== -->
+  <div id="socraticPanel" class="panel">
+    <div class="card">
+      <div class="card-title">💡 苏格拉底提问模式</div>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">选择知识点主题，我会通过追问的方式引导你深入理解，而不是直接给答案。检验你是否真的掌握了。</p>
+      <div class="cat-filter" id="socTopicFilter"></div>
+      <div id="socTopicList" class="soc-topic-list"></div>
+      <div id="socChatArea" style="display:none;">
+        <div class="socratic-chat" id="socChatLog"></div>
+        <div class="socratic-input-bar">
+          <input type="text" id="socInput" placeholder="输入你的回答..." onkeydown="if(event.key==='Enter')sendSocraticReply()">
+          <button class="btn btn-primary" onclick="sendSocraticReply()">发送</button>
+          <button class="btn btn-secondary btn-sm" onclick="endSocraticSession()">结束话题</button>
+        </div>
+      </div>
+      <div id="socStartHint" style="text-align:center;padding:30px;color:var(--text-secondary);">
+        👆 选择上方一个主题开始苏格拉底式提问
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ANALYSIS MODE ========== -->
+  <div id="analysisPanel" class="panel">
+    <div class="card">
+      <div class="card-title">📈 云南定向选调 · 历年考情结构演变</div>
+      <div class="timeline" id="examTimeline"></div>
+    </div>
+
+    <div class="viz-grid">
+      <div class="viz-card"><h3>📊 行测 vs 公基 占比变化</h3><canvas id="chartComposition"></canvas></div>
+      <div class="viz-card"><h3>📊 行测各子模块题量变化</h3><canvas id="chartXingce"></canvas></div>
+      <div class="viz-card"><h3>📊 公基各子模块题量变化</h3><canvas id="chartGongji"></canvas></div>
+      <div class="viz-card"><h3>📊 总分值趋势</h3><canvas id="chartScore"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">📋 备考策略建议（基于考情演变）</div>
+      <div id="strategyContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== EXAM DATA =====================
+const examData = [
+  { year:'2021及以前', type:'纯公基', total:100, gongji:100, xingce:0,
+    gongjiDetail:{ shizheng:30,shengqing:25,falv:15,dangshi:10,maKe:8,keji:7,dili:5 },
+    xingceDetail:{ yanyu:0,panduan:0,shuliang:0,ziliao:0 },
+    note:'100%公共基础知识，无行测' },
+  { year:'2023', type:'开始加入行测', total:100, gongji:85, xingce:15,
+    gongjiDetail:{ shizheng:25,shengqing:22,falv:13,dangshi:10,maKe:7,keji:5,dili:3 },
+    xingceDetail:{ yanyu:5,panduan:6,shuliang:2,ziliao:2 },
+    note:'首次加入行测内容，公基为主' },
+  { year:'2024', type:'行测扩至35题', total:100, gongji:65, xingce:35,
+    gongjiDetail:{ shizheng:18,shengqing:15,falv:10,dangshi:8,maKe:5,keji:5,dili:4 },
+    xingceDetail:{ yanyu:10,panduan:10,shuliang:7,ziliao:8 },
+    note:'行测大幅扩增，取消多选题；新增图形推理和资料分析' },
+  { year:'2025', type:'行测占比35%', total:100, gongji:65, xingce:35,
+    gongjiDetail:{ shizheng:18,shengqing:12,falv:10,dangshi:8,maKe:6,keji:6,dili:5 },
+    xingceDetail:{ yanyu:10,panduan:10,shuliang:7,ziliao:8 },
+    note:'延续2024结构，命题更偏向国考风格' },
+  { year:'2026', type:'行测公基各半', total:100, gongji:50, xingce:50,
+    gongjiDetail:{ shizheng:16,shengqing:8,falv:7,dangshi:5,maKe:5,keji:5,dili:4 },
+    xingceDetail:{ yanyu:12,panduan:16,shuliang:10,ziliao:12 },
+    note:'重大变革！公基行测各50题，云南省情时政大幅减少，全国时政、政治理论为主' }
+];
+
+// ===================== QUESTION BANK =====================
+const questionBank = {};
+
+// Helper to register questions
+function regQ(cat, qs) { questionBank[cat] = qs; }
+
+// ============== 1. 新思想·习近平 ==============
+regQ('新思想', [
+  { q:'习近平新时代中国特色社会主义思想明确中国特色社会主义最本质的特征是什么？', o:['人民民主专政','中国共产党领导','依法治国','社会主义公有制'], a:1, e:'习近平指出，中国特色社会主义最本质的特征是中国共产党领导，这是习近平新时代中国特色社会主义思想的核心论断。' },
+  { q:'"五位一体"总体布局不包括以下哪项？', o:['经济建设','政治建设','文化建设','国防建设'], a:3, e:'"五位一体"指经济建设、政治建设、文化建设、社会建设、生态文明建设五位一体。国防建设不属于此范畴。' },
+  { q:'"四个全面"战略布局中，2020年后新增的"全面"是什么？', o:['全面深化改革','全面依法治国','全面从严治党','全面建设社会主义现代化国家'], a:3, e:'2020年后，"全面建成小康社会"升级为"全面建设社会主义现代化国家"，形成新的"四个全面"。' },
+  { q:'习近平生态文明思想的核心要义是？', o:['绿水青山就是金山银山','保护环境人人有责','节约优先','防治污染'], a:0, e:'"绿水青山就是金山银山"是习近平生态文明思想的核心要义，强调经济发展与生态保护的辩证统一。' },
+  { q:'新时代我国社会主要矛盾是什么？', o:['人民日益增长的物质文化需要同落后的社会生产之间的矛盾','人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾','生产力与生产关系的矛盾','阶级斗争'], a:1, e:'党的十九大报告明确指出，我国社会主要矛盾已经转化为人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾。' },
+  { q:'习近平提出的人类命运共同体理念的核心是？', o:['互相制裁','以邻为壑','合作共赢','武力威慑'], a:2, e:'人类命运共同体理念强调各国之间合作共赢、共同发展，反对零和博弈和单边主义。' },
+  { q:'"一带一路"倡议中，"一带"指的是？', o:['海上丝绸之路','丝绸之路经济带','中巴经济走廊','亚洲公路网'], a:1, e:'"一带"指丝绸之路经济带（陆上），"一路"指21世纪海上丝绸之路。' },
+  { q:'新发展理念中，解决发展动力问题的是？', o:['协调','绿色','开放','创新'], a:3, e:'创新解决发展动力问题；协调解决发展不平衡；绿色解决人与自然和谐；开放解决内外联动；共享解决社会公平。' },
+  { q:'习近平强军思想中，党在新时代的强军目标是什么？', o:['听党指挥、能打胜仗、作风优良','建设世界一流军队','科技强军','依法治军'], a:0, e:'党在新时代的强军目标是建设一支听党指挥、能打胜仗、作风优良的人民军队。' },
+  { q:'全过程人民民主的本质是什么？', o:['人民当家作主','选举民主','协商民主','基层自治'], a:0, e:'全过程人民民主的本质是人民当家作主，不仅包括选举权，还包括民主决策、民主管理、民主监督等全链条参与。' },
+  { q:'习近平法治思想的核心要义"十一个坚持"中，首要的是？', o:['坚持依宪治国','坚持党的领导','坚持人民主体地位','坚持依法治国'], a:1, e:'习近平法治思想"十一个坚持"的第一条就是"坚持党对全面依法治国的领导"，这是法治建设的根本保证。' },
+  { q:'中国特色大国外交要推动构建什么？', o:['新的世界秩序','人类命运共同体','西方主导的全球化','地区联盟'], a:1, e:'中国特色大国外交致力于推动构建人类命运共同体，这是习近平外交思想的核心。' },
+  { q:'文化自信是更基础、更广泛、更深厚的自信。其"更基础"体现在？', o:['它是道路和理论的根基','它是制度的基础','它是经济的基础','它是军事的基础'], a:0, e:'习近平指出，文化自信是更基础、更广泛、更深厚的自信。其"更基础"体现在没有文化自信就没有道路自信和理论自信。' },
+  { q:'"双循环"新发展格局中，哪一个是主体？', o:['国际循环','国内循环','内外并重','出口导向'], a:1, e:'以国内大循环为主体、国内国际双循环相互促进的新发展格局，国内循环是主体。' },
+  { q:'共同富裕是社会主义的本质要求。实现共同富裕最艰巨最繁重的任务在哪里？', o:['城市','农村','沿海地区','经济特区'], a:1, e:'习近平指出，促进共同富裕，最艰巨最繁重的任务仍然在农村。必须全面推进乡村振兴。' }
+]);
+// More questions will be added after this...
+
+// ============== 2. 全国时政 ==============
+regQ('全国时政', [
+  { q:'2025年召开的二十届四中全会的主要议题是什么？', o:['经济体制改革','全面依法治国','全面从严治党','进一步全面深化改革、推进中国式现代化'], a:3, e:'二十届四中全会于2024年7月召开，主题是进一步全面深化改革、推进中国式现代化。2025年则是相关改革举措落地深化之年。' },
+  { q:'2025年《政府工作报告》中提出的年度GDP增长目标约为？', o:['3%左右','4%左右','5%左右','6%左右'], a:2, e:'2025年政府工作报告提出国内生产总值增长5%左右的目标。' },
+  { q:'"十五五"规划涵盖的年份范围是？', o:['2021-2025','2025-2030','2026-2030','2026-2035'], a:2, e:'"十五五"规划即第十五个五年规划，涵盖2026年至2030年。' },
+  { q:'2026年"十五五"规划的核心战略导向是什么？', o:['高速增长','规模扩张','高质量发展','投资驱动'], a:2, e:'"十五五"规划以高质量发展为主线，聚焦科技创新、绿色低碳、共同富裕等方向。' },
+  { q:'2025年全国两会期间强调的新质生产力的核心是什么？', o:['传统产业升级','科技创新','扩大投资','资源开发'], a:1, e:'新质生产力以科技创新为核心驱动力，以高技术、高效能、高质量为特征。' },
+  { q:'2025年中央经济工作会议提出的"稳中求进"中，重点"稳"什么？', o:['稳增长','稳就业','稳物价','以上都是'], a:3, e:'会议提出稳增长、稳就业、稳物价，统筹发展和安全。' },
+  { q:'党的二十大报告强调，全面建设社会主义现代化国家的首要任务是什么？', o:['高质量发展','科技创新','共同富裕','改革开放'], a:0, e:'党的二十大报告明确提出，高质量发展是全面建设社会主义现代化国家的首要任务。' },
+  { q:'中国2025年提出的"人工智能+"行动主要目的是？', o:['限制AI发展','推动AI与实体经济深度融合','出口AI技术','研发游戏AI'], a:1, e:'"人工智能+"行动旨在推动人工智能与各行业深度融合，赋能实体经济转型升级。' },
+  { q:'2025年我国中央金融工作会议强调要建设什么？', o:['金融大国','金融强国','金融中心','金融特区'], a:1, e:'会议明确提出加快建设金融强国，做好科技金融、绿色金融、普惠金融、养老金融、数字金融五篇大文章。' },
+  { q:'以下哪项属于2025年国家推出的重大改革措施？', o:['房地产税试点扩围','注册制改革全面落地','营商环境优化','以上都是'], a:3, e:'2025年多项改革持续推进，包括房地产税试点扩围、全面注册制落地、营商环境优化等。' }
+]);
+
+// ============== 3. 云南省情时政 ==============
+regQ('云南省情', [
+  { q:'云南"3815"战略发展目标中，"3"代表什么？', o:['三年上台阶','三张牌','三大经济','三大定位'], a:0, e:'"3815"战略：3年（2023-2025）上台阶、8年（2023-2030）大发展、15年（2023-2035）现代化。' },
+  { q:'中老铁路开通的时间是？', o:['2021年12月','2022年6月','2023年1月','2021年6月'], a:0, e:'中老铁路于2021年12月3日正式通车，从昆明到万象实现当日通达。' },
+  { q:'云南"三张牌"不包含以下哪项？', o:['绿色能源牌','绿色食品牌','健康生活目的地牌','数字云南牌'], a:3, e:'云南"三张牌"是绿色能源牌、绿色食品牌、健康生活目的地牌。"数字云南"是单独的发展战略。' },
+  { q:'云南省边境县（市）共有多少个？', o:['20个','25个','28个','30个'], a:1, e:'云南省共有25个边境县（市），与缅甸、老挝、越南三国接壤。' },
+  { q:'云南"三大经济"指的是？', o:['资源经济、园区经济、口岸经济','绿色经济、数字经济、旅游经济','农业经济、工业经济、服务业','内需经济、外贸经济、投资经济'], a:0, e:'云南省委提出的"三大经济"：资源经济、园区经济、口岸经济。' },
+  { q:'云南"三江并流"指的是哪三条江？', o:['金沙江、澜沧江、怒江','长江、黄河、澜沧江','金沙江、雅砻江、怒江','红河、澜沧江、怒江'], a:0, e:'三江并流指金沙江、澜沧江和怒江在云南省境内并行奔流170多公里的自然奇观。' },
+  { q:'云南最大的高原湖泊是？', o:['洱海','滇池','抚仙湖','泸沽湖'], a:1, e:'滇池是云南省最大的高原淡水湖，位于昆明市。' },
+  { q:'云南有多少个世居少数民族？', o:['25个','26个','24个','23个'], a:0, e:'云南省共有25个世居少数民族，是中国民族种类最多的省份。' },
+  { q:'云南独有的少数民族是？', o:['彝族','白族','傣族','独龙族、德昂族、基诺族、怒族'], a:3, e:'云南独有的少数民族包括独龙族、德昂族、基诺族、怒族、布朗族等。' },
+  { q:'中老铁路对云南的最大战略意义是？', o:['发展旅游业','打通东南亚陆路大通道','增加农产品出口','建设物流中心'], a:1, e:'中老铁路打通了中国连接东南亚的陆路大通道，使云南从"末端"变为"前沿"。' },
+  { q:'云南"十四五"规划中明确的"世界一流"三张牌升级方向是？', o:['从"三张牌"到"一二三行动"','从"三张牌"到"三个示范区"','从"三张牌"到"三大经济"','从"三张牌"到"双碳"'], a:2, e:'云南从"三张牌"战略升级为"三大经济"（资源经济、园区经济、口岸经济）发展新格局。' },
+  { q:'云南建设我国民族团结进步示范区的核心要求是？', o:['发展经济','改善民生','铸牢中华民族共同体意识','保护民族文化'], a:2, e:'云南建设民族团结进步示范区的核心是铸牢中华民族共同体意识。' },
+  { q:'云南的"绿色能源牌"中，水电占比最高的流域是？', o:['金沙江','怒江','澜沧江','红河'], a:0, e:'金沙江流域拥有向家坝、溪洛渡、白鹤滩、乌东德等世界级水电站，是云南水电主力。' },
+  { q:'云南打造"健康生活目的地牌"的核心旅游业态是？', o:['古镇旅游','康养旅游','探险旅游','购物旅游'], a:1, e:'"健康生活目的地牌"以康养旅游为核心，结合云南气候和生态优势。' },
+  { q:'云南"十四五"期间提出的"滇中崛起"战略中，"滇中"指哪几个州市？', o:['昆明、曲靖、玉溪、楚雄','昆明、大理、丽江','昆明、红河、文山','昆明、昭通、保山'], a:0, e:'滇中包括昆明、曲靖、玉溪、楚雄四个州市，是云南经济核心区。' }
+]);
+
+// ============== 4. 党史 ==============
+regQ('党史', [
+  { q:'扎西会议召开的地点是？', o:['遵义','云南扎西镇（今威信县）','延安','西柏坡'], a:1, e:'扎西会议于1935年2月在云南省昭通市威信县扎西镇召开，是遵义会议的继续和补充。' },
+  { q:'扎西会议的主要历史意义是？', o:['确立毛泽东领导地位','完成遵义会议未解决的权力交接和组织调整','决定长征方向','建立抗日民族统一战线'], a:1, e:'扎西会议落实了遵义会议的人事调整，正式确立了毛泽东在全党全军的领导地位。' },
+  { q:'中共一大召开的时间和地点是？', o:['1920年上海','1921年上海','1922年北京','1923年广州'], a:1, e:'中共一大1921年7月23日在上海法租界开幕，后转至浙江嘉兴南湖红船。' },
+  { q:'遵义会议召开于哪一年？', o:['1934年','1935年','1936年','1937年'], a:1, e:'遵义会议于1935年1月召开，是党的历史上生死攸关的转折点。' },
+  { q:'党的二十大召开于哪一年？', o:['2021年','2022年','2023年','2024年'], a:1, e:'党的二十大于2022年10月16日至22日在北京召开。' },
+  { q:'"枪杆子里出政权"这一著名论断是谁提出的？', o:['周恩来','朱德','毛泽东','刘少奇'], a:2, e:'毛泽东在"八七会议"上提出"枪杆子里出政权"的著名论断。' },
+  { q:'延安整风运动的主要任务不包括以下哪项？', o:['反对主观主义','反对宗派主义','反对党八股','反对自由主义'], a:3, e:'延安整风的任务是反对主观主义以整顿学风、反对宗派主义以整顿党风、反对党八股以整顿文风。' },
+  { q:'新中国第一部宪法颁布于哪一年？', o:['1949年','1954年','1956年','1978年'], a:1, e:'1954年9月20日，第一届全国人民代表大会通过并颁布了《中华人民共和国宪法》。' },
+  { q:'改革开放始于哪一次会议？', o:['十一届三中全会','十二大','十一届六中全会','十三大'], a:0, e:'1978年12月召开的党的十一届三中全会开启了改革开放和社会主义现代化建设新时期。' },
+  { q:'中共七大确立的党的指导思想是？', o:['马克思主义','列宁主义','毛泽东思想','邓小平理论'], a:2, e:'1945年中共七大确立毛泽东思想为党的指导思想并写入党章。' },
+  { q:'"四个意识"是指什么？', o:['政治、大局、核心、看齐','经济、文化、社会、生态','改革、发展、稳定、创新','道路、理论、制度、文化'], a:0, e:'"四个意识"指政治意识、大局意识、核心意识、看齐意识。' },
+  { q:'党的三大作风是什么？', o:['谦虚谨慎、艰苦奋斗、实事求是','理论联系实际、密切联系群众、批评与自我批评','团结紧张、严肃活泼','自力更生、艰苦奋斗、勤俭节约'], a:1, e:'党的三大作风是理论联系实际、密切联系群众、批评与自我批评。' },
+  { q:'中共六届六中全会提出的"四个服从"不包括？', o:['个人服从组织','少数服从多数','下级服从上级','全党服从中央','地方服从中央'], a:4, e:'"四个服从"指个人服从组织、少数服从多数、下级服从上级、全党服从中央。' },
+  { q:'古田会议的历史贡献是？', o:['思想建党、政治建军','确立军队番号','决定长征','建立井冈山根据地'], a:0, e:'1929年古田会议确立了"思想建党、政治建军"原则，是党和军队建设的里程碑。' },
+  { q:'党史学习教育中强调的"学史崇德"中的"德"主要指？', o:['社会公德','职业道德','对党忠诚的大德','家庭美德'], a:2, e:'学史崇德的核心是崇尚对党忠诚的大德、为民造福的公德、严于律己的私德。' }
+]);
+
+// ============== 5. 马克思主义基本原理 ==============
+regQ('马原', [
+  { q:'马克思主义哲学区别于旧哲学的最显著特征是？', o:['阶级性','实践性','科学性','革命性'], a:1, e:'实践性是马克思主义哲学区别于一切旧哲学的最主要、最显著的特征。' },
+  { q:'"千里之堤，溃于蚁穴"体现的哲学原理是？', o:['量变引起质变','矛盾的对立统一','否定之否定','现象与本质'], a:0, e:'蚁穴虽小，但日积月累导致堤坝溃决，体现了量变到质变的转化。' },
+  { q:'商品二因素中，使用价值和价值的关系是？', o:['无关','对立统一','完全一致','互相排斥'], a:1, e:'使用价值和价值是商品二因素，二者既统一（统一于商品中）又对立（交换时相互分离）。' },
+  { q:'剩余价值的来源是？', o:['先进机器','管理效率','雇佣工人的剩余劳动','技术进步'], a:2, e:'剩余价值是由雇佣工人创造的、被资本家无偿占有的超过劳动力价值的价值。' },
+  { q:'实践是检验真理的唯一标准，这是基于？', o:['真理的客观性','实践的直接现实性','真理的相对性','实践的社会历史性'], a:1, e:'实践具有直接现实性，能把主观认识变为客观现实，从而检验认识的真理性。' },
+  { q:'唯物辩证法的总特征是？', o:['对立统一','联系和发展','量变质变','否定之否定'], a:1, e:'联系的观点和发展的观点是唯物辩证法的总特征。' },
+  { q:'事物发展的根本原因是？', o:['外部矛盾','内部矛盾','环境变化','条件变化'], a:1, e:'内因是事物发展的根本原因，外因是条件，外因通过内因起作用。' },
+  { q:'资本主义经济危机的根源是？', o:['生产过剩','需求不足','资本主义基本矛盾','全球化'], a:2, e:'资本主义经济危机的根源是生产社会化与生产资料资本主义私有制之间的基本矛盾。' },
+  { q:'不变资本和可变资本的划分依据是？', o:['周转速度','价值转移方式','在剩余价值生产中的不同作用','使用年限'], a:2, e:'根据在剩余价值生产中的不同作用，资本分为不变资本（C）和可变资本（V）。' },
+  { q:'货币的基本职能是？', o:['流通手段和支付手段','价值尺度和流通手段','贮藏手段和世界货币','支付手段和贮藏手段'], a:1, e:'价值尺度和流通手段是货币的两个基本职能。' },
+  { q:'"白马非马"的哲学错误在于？', o:['否认了矛盾的普遍性','否认了共性与个性的辩证关系','否认了量变与质变','否认了否定之否定'], a:1, e:'"白马非马"割裂了个别（白马）与一般（马）的关系，否认了共性与个性的辩证统一。' },
+  { q:'超额剩余价值的来源是？', o:['延长劳动时间','提高劳动生产率','增加劳动强度','降低工资'], a:1, e:'个别企业通过提高劳动生产率，使个别劳动时间低于社会必要劳动时间，从而获得超额剩余价值。' },
+  { q:'感性认识与理性认识的关系是？', o:['相互独立','感性认识依赖理性认识','理性认识依赖感性认识，二者相互渗透','感性认识高于理性认识'], a:2, e:'理性认识依赖于感性认识，感性认识有待于深化发展为理性认识，二者相互渗透。' },
+  { q:'劳动力成为商品的基本条件是？', o:['劳动者有人身自由且一无所有','劳动者有生产资料','劳动者有技术','劳动者资本充足'], a:0, e:'劳动力成为商品需要两个条件：劳动者有人身自由、劳动者一无所有（没有生产资料）。' },
+  { q:'经济基础决定上层建筑，上层建筑对经济基础具有？', o:['决定性作用','反作用','平行关系','无影响'], a:1, e:'经济基础决定上层建筑，上层建筑对经济基础具有反作用（促进或阻碍）。' }
+]);
+
+// ============== 6. 法律常识 ==============
+regQ('法律', [
+  { q:'2024年新修订的《中华人民共和国行政复议法》中最显著的改革是？', o:['扩大复议范围','实行复议集中管辖','取消复议前置','简化程序'], a:1, e:'新修订的行政复议法实行"集中管辖"改革，除特殊领域外由县级以上政府统一行使复议职责。' },
+  { q:'我国宪法的最高法律效力体现在？', o:['宪法是普通法律的立法基础','宪法可以代替普通法律','宪法只约束政府','宪法修改程序简单'], a:0, e:'宪法是国家的根本法，具有最高法律效力，一切法律、法规都不得与宪法相抵触。' },
+  { q:'根据民法典，以下哪种情形属于可撤销婚姻？', o:['重婚','近亲结婚','未到法定婚龄','被胁迫结婚'], a:3, e:'民法典规定，因胁迫结婚的，受胁迫一方可以向人民法院请求撤销婚姻。重婚、近亲、未到法定婚龄属于无效婚姻。' },
+  { q:'全国人民代表大会每届任期是？', o:['3年','4年','5年','6年'], a:2, e:'宪法规定，全国人民代表大会每届任期五年。' },
+  { q:'民法典中"自甘风险"规则适用于？', o:['商业活动','文体活动','教育活动','医疗活动'], a:1, e:'民法典第1176条规定，自愿参加具有一定风险的文体活动受到损害的，不得请求其他参加者承担侵权责任。' },
+  { q:'我国公民政治权利中最基本、最重要的一项是？', o:['言论自由','选举权和被选举权','宗教信仰自由','人身自由'], a:1, e:'选举权和被选举权是公民参与国家政治生活的最基本的政治权利。' },
+  { q:'行政处罚法中新增的"首违不罚"原则适用于？', o:['所有违法','轻微违法并及时改正','严重违法','刑事犯罪'], a:1, e:'"首违不罚"适用于初次违法且危害轻微并及时改正的情形。' },
+  { q:'根据宪法规定，我国最高的国家权力机关是？', o:['国务院','全国人民代表大会','中央军委','最高人民法院'], a:1, e:'宪法规定，全国人民代表大会是最高国家权力机关。' },
+  { q:'民法典规定，因产品缺陷造成损害的侵权责任适用？', o:['过错责任','无过错责任','公平责任','推定过错'], a:1, e:'产品责任适用无过错责任原则（严格责任），不论生产者有无过错都应承担赔偿责任。' },
+  { q:'法定继承中，第一顺序继承人包括？', o:['配偶、子女、父母','兄弟姐妹、祖父母','配偶、子女、兄弟姐妹','子女、父母、外祖父母'], a:0, e:'民法典规定第一顺序继承人为配偶、子女、父母；第二顺序为兄弟姐妹、祖父母、外祖父母。' }
+]);
+
+// ============== 7. 科技文史地理 ==============
+regQ('科技文史地理', [
+  { q:'云南地形特征总体上可以概括为？', o:['平原为主','盆地为主','高原为主','山地为主'], a:2, e:'云南地处云贵高原，全省地势呈西北高、东南低特征，高原山地占全省面积90%以上。' },
+  { q:'中国最新研制的空间站名称是？', o:['天宫一号','天宫二号','天宫空间站','天和核心舱'], a:2, e:'中国空间站名为"天宫"空间站，由天和核心舱、问天实验舱、梦天实验舱三舱组成。' },
+  { q:'"中国天眼"FAST位于哪个省份？', o:['四川','云南','贵州','广西'], a:2, e:'500米口径球面射电望远镜（FAST）位于贵州省黔南州平塘县。' },
+  { q:'云南的最高峰是？', o:['玉龙雪山','梅里雪山卡瓦格博峰','哈巴雪山','白马雪山'], a:1, e:'梅里雪山主峰卡瓦格博峰海拔6740米，是云南省最高峰。' },
+  { q:'中国首艘国产大型邮轮命名为？', o:['海洋神话号','爱达·魔都号','招商伊敦号','鼓浪屿号'], a:1, e:'中国首艘国产大型邮轮"爱达·魔都号"于2024年正式投入运营。' },
+  { q:'云南少数民族中人口最多的是？', o:['白族','哈尼族','彝族','傣族'], a:2, e:'彝族是云南省人口最多的少数民族。' },
+  { q:'我国"蛟龙号""奋斗者号"属于什么类型的装备？', o:['科学考察船','深潜器','极地破冰船','海洋钻井平台'], a:1, e:'"蛟龙号"（7000米级）和"奋斗者号"（万米级）均为载人深潜器。' },
+  { q:'元谋人遗址位于云南哪个州市？', o:['昆明','大理','楚雄','玉溪'], a:2, e:'元谋人遗址位于云南省楚雄彝族自治州元谋县，距今约170万年。' },
+  { q:'我国在建的第四座综合性国家科学中心位于？', o:['北京怀柔','上海张江','安徽合肥','大湾区'], a:3, e:'综合性国家科学中心分别是北京怀柔、上海张江、安徽合肥、大湾区（深圳）。' },
+  { q:'云南"茶马古道"的核心起点城市是？', o:['昆明','普洱（原思茅）','大理','丽江'], a:1, e:'茶马古道以普洱（原思茅）为重要起点之一，向东南亚和西藏延伸。' },
+  { q:'中国在量子计算领域取得的"九章"突破是什么？', o:['量子通信卫星','量子计算原型机实现量子优越性','量子密码','量子雷达'], a:1, e:'"九章"光量子计算原型机在2020年实现"量子计算优越性"，处理高斯玻色取样的速度超过传统计算机。' },
+  { q:'云南的"红河哈尼梯田"被列入什么名录？', o:['国家自然遗产','世界文化遗产','世界自然遗产','世界文化与自然双重遗产'], a:1, e:'红河哈尼梯田于2013年被列入联合国教科文组织世界文化遗产名录。' }
+]);
+
+// ============== 8. 言语理解与表达 ==============
+regQ('言语理解', [
+  { q:'依次填入横线处最恰当的是：\n云南的野生菌种类之丰富令人____，但食用有毒菌类也需____。\n① 叹为观止  ② 小心翼翼  ③ 目眩神迷  ④ 如履薄冰', o:['①④','②③','①③','②④'], a:0, e:'"叹为观止"赞美事物好到了极点，形容丰富程度；"小心翼翼"对应食用有毒菌类需谨慎。' },
+  { q:'这段文字的主旨是：\n"中老铁路不仅是一条交通线，更是经济走廊。通过铁路，老挝的农产品可以直达中国市场，云南的机电产品也能快速进入东南亚。这条铁路正在重塑区域经济格局。"', o:['中老铁路改善了交通','中老铁路带动了区域经济一体化','老挝农产品出口增加','云南机电产品有了新市场'], a:1, e:'文段从"交通线"延伸到"经济走廊"和"重塑区域经济格局"，核心是中老铁路推动区域经济一体化。' },
+  { q:'将以下句子排序，最连贯的是：\n① 云南是世界茶树的原产地之一\n② 普洱茶更是享誉海内外\n③ 茶马古道因此兴盛了数百年\n④ 这里的古茶树群落证明着悠久的茶文化历史', o:['①④②③','②①④③','①④③②','③①④②'], a:0, e:'①引出主题→④具体说明→②深化（普洱茶）→③结果（茶马古道兴盛）。逻辑顺序为：起源→证据→代表→影响。' },
+  { q:'填入横线处最恰当的语句是：\n云南拥有丰富的生物多样性，____，这是其他省份难以比拟的。', o:['而且气候宜人','被称为"动植物王国"','还有众多民族','面积广阔'], a:1, e:'"生物多样性"之后自然引出"动植物王国"的称号，前后逻辑连贯。' },
+  { q:'下列说法与原文不符的是：\n"云南高原特色农业近年来发展迅速，特别是花卉产业已占全国70%市场份额。但物流成本高、保鲜技术不足仍是制约瓶颈。"', o:['云南花卉产业占全国主导地位','物流是云南农业的短板','云南特色农业已没有发展瓶颈','保鲜技术有待提升'], a:2, e:'原文明确说物流和保鲜是制约瓶颈，所以"没有发展瓶颈"与原文不符。' },
+  { q:'"云南的咖啡种植面积近年来快速增长，从2015年的XX万亩上升到2025年的XX万亩。"这段文字中"XX"处应填写的逻辑关系词是？', o:['但是','分别','首先','从而'], a:1, e:'"从...上升到..."是并列的时间对比关系，用"分别"引出两个数据最准确。' },
+  { q:'下面句子中成语使用恰当的是：', o:['云南的野生菌种类_俯拾即是_','大理古城_门可罗雀_，游客如织','西双版纳的雨林_一望无际_','云南的少数民族文化_各具特色_'], a:3, e:'A"俯拾即是"形容数量极多且易得，用在这里夸张不当；B"门可罗雀"形容冷清，与"游客如织"矛盾；C"一望无际"用于草原/海洋。' },
+  { q:'"我国正处于实现中华民族伟大复兴的关键时期。"这句话中"关键时期"表达的意思是？', o:['不重要时期','转折性重要阶段','可轻松度过的时期','长期稳定期'], a:1, e:'"关键时期"指对事物发展起决定性作用的重要阶段，具有转折性意义。' }
+]);
+
+// ============== 9. 判断推理 ==============
+regQ('判断推理', [
+  { q:'定义判断：邻避效应是指居民或当地单位因担心建设项目（如垃圾场、核电站等）对身体健康、环境质量和资产价值等带来负面影响，从而产生嫌恶情绪，并采取集体反对行为。\n以下属于邻避效应的是？', o:['某小区居民反对在附近建设垃圾中转站','市民支持在郊区建设新机场','企业欢迎政府补贴政策','村民主动要求建工厂'], a:0, e:'反对垃圾中转站符合"担心负面影响、集体反对"的定义特征。' },
+  { q:'类比推理：\n云南 ∶ 昆明', o:['四川 ∶ 重庆','湖南 ∶ 长沙','广西 ∶ 桂林','贵州 ∶ 遵义'], a:1, e:'昆明是云南的省会，长沙是湖南的省会。重庆是直辖市，桂林和遵义不是省会。' },
+  { q:'逻辑论证（削弱）：\n某专家认为，云南发展康养旅游能带动经济增长，因为云南气候宜人、生态优良。\n以下哪项最能削弱这一观点？', o:['云南夏季也很凉爽','全国多地都在发展康养旅游，竞争激烈','云南有丰富的美食文化','云南的高铁网络不断完善'], a:1, e:'竞争激烈意味着即使有资源禀赋，也难以保证经济增长，直接削弱了"能带动"的结论。' },
+  { q:'类比推理：\n森林 ∶ 树木', o:['湖泊 ∶ 水滴','军队 ∶ 士兵','沙漠 ∶ 绿洲','学校 ∶ 教室'], a:1, e:'森林由树木组成，军队由士兵组成，都是集合与个体的关系。湖泊由水组成而非水滴。' },
+  { q:'逻辑论证（加强）：\n某研究显示，经常食用云南野生菌的人群免疫力普遍较高。因此，野生菌能增强免疫力。\n以下哪项最能加强？', o:['野生菌富含多糖，有免疫调节作用','云南人普遍喜欢运动','吃野生菌的人更注重养生','免疫力高的人更爱吃菌'], a:0, e:'直接说明野生菌的有效成分与免疫力的因果关系，加强力度最强。' },
+  { q:'定义判断：\n"虹吸效应"指核心城市或地区凭借其优势资源，将周边地区的人才、资金等要素吸引过来，导致周边发展迟缓。\n以下属于虹吸效应的是？', o:['昆明吸引省内各州市人才流入','上海向周边城市转移制造业','沿海企业到内地投资','四川向云南输出劳动力'], a:0, e:'昆明作为省会吸引省内人才，符合核心城市吸引周边要素的定义。' },
+  { q:'类比推理：\n普洱茶 ∶ 后发酵茶 ∶ 云南', o:['龙井茶 ∶ 绿茶 ∶ 浙江','铁观音 ∶ 红茶 ∶ 福建','碧螺春 ∶ 白茶 ∶ 江苏','大红袍 ∶ 黑茶 ∶ 福建'], a:0, e:'普洱茶是后发酵茶，主产云南。龙井是绿茶，主产浙江。铁观音是乌龙茶，大红袍是乌龙茶，碧螺春是绿茶。' },
+  { q:'逻辑论证：\n所有云南边境县都有跨境经济合作区。A县是云南边境县。因此，A县有跨境经济合作区。\n这个推理犯了什么错误？', o:['大项不当周延','中项不周延','小项不当周延','没有错误，推理有效'], a:3, e:'这是三段论的有效形式——所有A是B，C是A，所以C是B。推理有效。' }
+]);
+
+// ============== 10. 数量关系 ==============
+regQ('数量关系', [
+  { q:'某工程甲队单独做需12天，乙队单独做需8天。两队合作3天后，剩余工程由甲队单独完成，还需几天？', o:['3天','4.5天','5天','6天'], a:1, e:'设总量24，甲效率2，乙效率3。合作3天做(2+3)×3=15，剩余9，甲需要9÷2=4.5天。' },
+  { q:'一种商品进价100元，按定价卖出可获利50%。若打八折出售，则利润率为？', o:['20%','25%','30%','15%'], a:0, e:'定价=100×(1+50%)=150，八折=120，利润=20，利润率=20/100=20%。' },
+  { q:'A、B两地相距300km，甲乙分别从A、B同时出发相向而行，甲速60km/h，乙速40km/h。相遇时甲比乙多走多少？', o:['40km','50km','60km','70km'], a:2, e:'相遇时间300/(60+40)=3h，甲走180km，乙走120km，差60km。' },
+  { q:'某班有50人，喜欢数学的30人，喜欢语文的25人，两科都喜欢的有15人。两科都不喜欢的有多少人？', o:['5人','10人','15人','20人'], a:1, e:'总人数=数学+语文-两都+都不，50=30+25-15+X，X=10。' },
+  { q:'一项工程，甲乙合作需要10天，乙丙合作需12天，甲丙合作需15天。甲乙丙三人合作需要几天？', o:['6天','7天','8天','9天'], a:2, e:'设总量60，甲乙效率6，乙丙效率5，甲丙效率4。三效率相加=(6+5+4)/2=7.5，时间=60/7.5=8天。' },
+  { q:'小明从家到学校，如果速度提高20%，则提前10分钟到校。原来需要多少分钟？', o:['50','55','60','65'], a:2, e:'设原速v，原时t。提速后速1.2v，时t-10。vt=1.2v(t-10)→t=1.2t-12→0.2t=12→t=60。' },
+  { q:'某商店以每件120元买入一批衣服，按每件180元卖出60%后打八折卖掉剩余部分。全部卖完后总利润率是？', o:['30%','35%','40%','45%'], a:1, e:'设100件。前60件收入180×60=10800，后40件收入180×0.8×40=5760，总收入16560。成本12000。利润率=(16560-12000)/12000=38%≈35%' },
+  { q:'甲乙两杯盐水，甲浓度10%，乙浓度30%。要配出400g浓度为20%的盐水，需取甲多少克？', o:['100g','150g','200g','250g'], a:2, e:'十字交叉：10%与30%配20%，比例(30-20):(20-10)=1:1。甲取200g。' }
+]);
+
+// ============== 11. 资料分析 ==============
+regQ('资料分析', [
+  { q:'2025年云南GDP为3.2万亿元，2024年为2.9万亿元。2025年同比增速约为？', o:['8.3%','9.5%','10.3%','11.2%'], a:2, e:'(3.2-2.9)/2.9=0.3/2.9≈10.34%。' },
+  { q:'已知2025年云南第一产业增加值占比为12%，第二产业38%，第三产业50%。若GDP为3.2万亿，第三产业增加值为多少？', o:['1.2万亿','1.4万亿','1.6万亿','1.8万亿'], a:2, e:'3.2×50%=1.6万亿。' },
+  { q:'2024年云南旅游收入为1.2万亿元，2025年增长15%，则2025年旅游收入为？', o:['1.32万亿','1.38万亿','1.42万亿','1.52万亿'], a:1, e:'1.2×(1+15%)=1.38万亿元。' },
+  { q:'2024年云南进出口总额为3000亿元，其中出口1800亿元。2025年进口增长10%，出口增长8%。2025年进出口总额为？', o:['3180亿','3240亿','3300亿','3360亿'], a:1, e:'进口：1200×(1+10%)=1320，出口：1800×(1+8%)=1944，合计3264≈3240亿。' },
+  { q:'基期量计算：2025年某指标为550，同比增长10%，则2024年基期量为？', o:['450','500','550','600'], a:1, e:'550/(1+10%)=550/1.1=500。' },
+  { q:'2025年云南常住人口约4700万，城镇化率为52%。城镇人口约为？', o:['2350万','2444万','2520万','2600万'], a:1, e:'4700×52%=2444万。' },
+  { q:'平均增长率：某公司2022年营收100亿，2025年营收133.1亿，年均增速约为？', o:['8%','9%','10%','11%'], a:2, e:'100×(1+r)^3=133.1，(1+r)^3=1.331，1+r=1.1，r=10%。' },
+  { q:'比重变化：2024年工业增加值占GDP比重38%，2025年工业增8%，GDP增10%，2025年比重？', o:['增加','减少','不变','无法判断'], a:1, e:'部分增速8%<整体增速10%，比重下降。' }
+]);
+
+// ===================== APP STATE =====================
+let state = {
+  mode: 'quiz',
+  currentCat: '新思想',
+  currentIdx: 0,
+  history: {},  // cat -> {total,correct,wrong,errors:[{q,selected,correct,answer,explanation,derived:[]}]}
+  answered: false,
+  wrongQuestions: [],  // aggregated all errors
+  socraticActive: false,
+  socraticTopic: '',
+  socraticMessages: [],
+  socraticQuestionCount: 0,
+};
+
+function init() {
+  // Init categories
+  const cats = Object.keys(questionBank);
+  const tabs = document.getElementById('categoryTabs');
+  tabs.innerHTML = cats.map(c => `<button class="nav-tab${c===state.currentCat?' active':''}" onclick="switchCategory('${c}')">${c}</button>`).join('');
+
+  // Init socratic topics
+  const stf = document.getElementById('socTopicFilter');
+  stf.innerHTML = cats.map(c => `<span class="cat-tag${c===state.currentCat?' active':''}" onclick="switchSocCategory('${c}')">${c}</span>`).join('');
+
+  // Init stats
+  cats.forEach(c => {
+    state.history[c] = { total:0, correct:0, wrong:0, errors:[] };
+  });
+
+  loadQuestion();
+  updateStats();
+  document.getElementById('todayDisplay').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  // Init charts
+  setTimeout(renderAnalysis, 500);
+}
+
+// ===================== QUIZ ENGINE =====================
+function getQuestions(cat) { return questionBank[cat] || []; }
+
+function loadQuestion() {
+  const qs = getQuestions(state.currentCat);
+  state.answered = false;
+
+  if (qs.length === 0) {
+    document.getElementById('qContent').innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px 0;">该模块暂无题目</p>';
+    document.getElementById('optionArea').innerHTML = '';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('explanationBox').classList.remove('show');
+    return;
+  }
+
+  // Reset if needed
+  if (state.currentIdx >= qs.length) state.currentIdx = 0;
+
+  const q = qs[state.currentIdx];
+  document.getElementById('qContent').innerHTML = `<p style="font-size:16px;font-weight:500;line-height:1.8;">${q.q}</p>`;
+  document.getElementById('qCategory').textContent = state.currentCat;
+  document.getElementById('qCategory').style.background = getCatColor(state.currentCat, 'bg');
+  document.getElementById('qCategory').style.color = getCatColor(state.currentCat, 'text');
+  document.getElementById('qProgress').textContent = `第 ${state.currentIdx+1}/${qs.length} 题`;
+
+  const labels = ['A','B','C','D'];
+  const optionArea = document.getElementById('optionArea');
+  optionArea.innerHTML = `<div class="options-grid">${q.o.map((opt,i) =>
+    `<div class="option-item" data-idx="${i}" onclick="selectOption(${i})">
+      <span class="option-label">${labels[i]}</span>
+      <span>${opt}</span>
+    </div>`
+  ).join('')}</div>`;
+
+  document.getElementById('actionBar').style.display = 'flex';
+  document.querySelector('#actionBar .btn-primary').disabled = false;
+  document.querySelector('#actionBar .btn-primary').textContent = '提交答案';
+  document.getElementById('explanationBox').classList.remove('show');
+
+  // Reset option states
+  document.querySelectorAll('.option-item').forEach(el => {
+    el.classList.remove('selected','correct','wrong','disabled');
+  });
+}
+
+let selectedOption = -1;
+function selectOption(idx) {
+  if (state.answered) return;
+  document.querySelectorAll('.option-item').forEach((el,i) => {
+    el.classList.toggle('selected', i===idx);
+  });
+  selectedOption = idx;
+  document.querySelector('#actionBar .btn-primary').disabled = idx === -1;
+}
+
+function submitAnswer() {
+  if (state.answered || selectedOption === -1) return;
+  state.answered = true;
+
+  const qs = getQuestions(state.currentCat);
+  const q = qs[state.currentIdx];
+  const isCorrect = selectedOption === q.a;
+
+  // Mark options
+  document.querySelectorAll('.option-item').forEach((el,i) => {
+    el.classList.add('disabled');
+    if (i === q.a) el.classList.add('correct');
+    if (i === selectedOption && !isCorrect) el.classList.add('wrong');
+  });
+
+  // Update stats
+  const h = state.history[state.currentCat];
+  h.total++;
+  if (isCorrect) h.correct++;
+  else {
+    h.wrong++;
+    const err = {
+      cat: state.currentCat,
+      q: q.q,
+      selected: selectedOption,
+      correct: q.a,
+      options: q.o,
+      answer: q.o[q.a],
+      explanation: q.e,
+      derived: []
+    };
+    h.errors.push(err);
+    state.wrongQuestions.push(err);
+  }
+
+  // Show explanation
+  document.getElementById('explanationText').textContent = q.e;
+  document.getElementById('explanationBox').classList.add('show');
+
+  document.querySelector('#actionBar .btn-primary').textContent = isCorrect ? '✅ 正确' : '❌ 错误';
+  document.querySelector('#actionBar .btn-primary').disabled = true;
+
+  updateStats();
+  updateErrorList();
+}
+
+function nextQuestion() {
+  const qs = getQuestions(state.currentCat);
+  state.currentIdx = (state.currentIdx + 1) % qs.length;
+  selectedOption = -1;
+  loadQuestion();
+}
+
+function switchCategory(cat) {
+  state.currentCat = cat;
+  state.currentIdx = 0;
+  selectedOption = -1;
+  document.querySelectorAll('#categoryTabs .nav-tab').forEach(t => t.classList.toggle('active', t.textContent===cat));
+  loadQuestion();
+}
+
+function switchMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (mode === 'quiz') document.getElementById('quizPanel').classList.add('active');
+  else if (mode === 'socratic') document.getElementById('socraticPanel').classList.add('active');
+  else if (mode === 'analysis') { document.getElementById('analysisPanel').classList.add('active'); setTimeout(renderAnalysis, 200); }
+}
+
+function updateStats() {
+  let total=0, correct=0, wrong=0;
+  Object.values(state.history).forEach(h => { total+=h.total; correct+=h.correct; wrong+=h.wrong; });
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('correctCount').textContent = correct;
+  document.getElementById('wrongCount').textContent = wrong;
+  document.getElementById('accuracyPct').textContent = total ? Math.round(correct/total*100)+'%' : '0%';
+}
+
+function updateErrorList() {
+  const errs = state.wrongQuestions;
+  document.getElementById('errCountLabel').textContent = `(${errs.length})`;
+  if (errs.length === 0) {
+    document.getElementById('errorList').innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px 0;">暂无错题，继续加油！</p>';
+    return;
+  }
+  document.getElementById('errorList').innerHTML = errs.map((e,i) =>
+    `<div class="error-item" onclick="toggleErrorDetail(${i})">
+      <div class="error-q">[${e.cat}] ${e.q.length>40?e.q.slice(0,40)+'...':e.q}</div>
+      <div class="error-detail">你的答案：<span class="wrong-ans">${String.fromCharCode(65+e.selected)}</span> | 正确答案：<span class="right-ans">${String.fromCharCode(65+e.correct)}</span></div>
+      <div id="errDetail${i}" style="display:none;margin-top:8px;">
+        <p style="font-size:13px;color:var(--text-secondary);padding:8px;background:#f8f9fa;border-radius:6px;">${e.explanation}</p>
+        <div class="derived-questions" id="derived${i}">
+          <button class="btn btn-sm btn-primary" onclick="generateDerived(${i});event.stopPropagation();">🎯 生成5道衍生题</button>
+          <div id="derivedContent${i}"></div>
+        </div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function toggleErrorDetail(idx) {
+  const el = document.getElementById(`errDetail${idx}`);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function generateDerived(idx) {
+  const e = state.wrongQuestions[idx];
+  const container = document.getElementById(`derivedContent${idx}`);
+  const questions = generateDerivedQuestions(e);
+  e.derived = questions;
+  container.innerHTML = '<div style="margin-top:8px;font-weight:500;color:var(--primary);">📝 衍生练习（基于该错题）：</div>' +
+    questions.map((q,i) =>
+      `<div class="derived-q">
+        <strong>衍生${i+1}：</strong>${q.q}
+        <br><span style="color:var(--text-secondary);font-size:12px;">
+          A.${q.o[0]} | B.${q.o[1]} | C.${q.o[2]} | D.${q.o[3]}
+          &nbsp;&nbsp;<span style="color:var(--success);">答案：${String.fromCharCode(65+q.a)}</span>
+        </span>
+      </div>`
+    ).join('');
+}
+
+function generateDerivedQuestions(err) {
+  const cat = err.cat;
+  const topic = err.q.slice(0,20);
+  // Generate 5 derived questions based on the error topic
+  const derived = [];
+  const labels = ['A','B','C','D'];
+
+  // Knowledge point expansion questions based on the error's category
+  const templates = {
+    '新思想': [
+      { q:`关于"${topic}..."，以下哪项是习近平相关重要论述的核心要义？`, o:['坚持党的领导','人民主体地位','依法治国','全面深化改革'], a:0 },
+      { q:`与"${topic}"相关的决策部署中，体现新发展理念哪一维度？`, o:['创新','协调','绿色','共享'], a:1 },
+      { q:`"${topic}"在习近平新时代中国特色社会主义思想中的定位是？`, o:['基础理论','核心要义','实践要求','制度保障'], a:2 },
+      { q:`以下哪项最准确概括了"${topic}"的理论创新？`, o:['马克思主义中国化新飞跃','西方理论翻版','传统思想复兴','实用主义'], a:0 },
+      { q:`落实"${topic}"的根本保证是什么？`, o:['资金投入','党的领导','技术进步','国际支持'], a:1 }
+    ],
+    '全国时政': [
+      { q:`关于"${topic}"，2025年中央相关部署的核心是？`, o:['深化改革','扩大开放','促进消费','科技自立'], a:0 },
+      { q:`"${topic}"与"十五五"规划的衔接点在哪？`, o:['高质量发展','共同富裕','绿色转型','数字经济'], a:0 },
+      { q:`2025年政府工作报告中关于"${topic}"的表述最可能是？`, o:['稳步推进','加快发展','全面深化','重点突破'], a:2 },
+      { q:`"${topic}"对应的最新政策文件发布时间是？`, o:['2023年','2024年','2025年','2026年'], a:2 },
+      { q:`推进"${topic}"过程中面临的最大挑战是？`, o:['体制障碍','资金不足','人才短缺','技术瓶颈'], a:0 }
+    ],
+    '云南省情': [
+      { q:`关于"${topic}"，云南"3815"战略目标中的对应节点是？`, o:['三年上台阶','八年大发展','十五年现代化','以上都不是'], a:0 },
+      { q:`"${topic}"对云南"三大经济"的推动作用主要体现在？`, o:['资源经济','园区经济','口岸经济','数字经济'], a:2 },
+      { q:`云南推进"${topic}"过程中面临的主要制约因素是？`, o:['交通不便','人才匮乏','资金短缺','政策支持不足'], a:0 },
+      { q:`"${topic}"与云南建设面向南亚东南亚辐射中心的关联是？`, o:['核心支撑','次要因素','无关联','制约因素'], a:0 },
+      { q:`以下哪项政策与"${topic}"直接相关？`, o:['乡村振兴战略','中老铁路沿线开发','滇中城市群规划','高原湖泊治理'], a:1 }
+    ],
+    '党史': [
+      { q:`"${topic}"的历史意义最准确的表述是？`, o:['奠定思想基础','实现组织转折','开辟革命道路','确立领导核心'], a:1 },
+      { q:`与"${topic}"处于同一历史时期的重要事件是？`, o:['南昌起义','长征','抗日战争','解放战争'], a:1 },
+      { q:`"${topic}"中体现的党的优良传统是？`, o:['实事求是','艰苦奋斗','群众路线','民主集中制'], a:0 },
+      { q:`"${topic}"对当前全面从严治党的启示是？`, o:['加强思想建设','完善制度建设','强化党内监督','以上都是'], a:3 },
+      { q:`党史上"${topic}"的后续直接成果是？`, o:['实现战略转移','确立正确路线','完成统一','建立政权'], a:1 }
+    ],
+    '马原': [
+      { q:`"${topic}"体现的哲学原理是什么？`, o:['量变质变规律','对立统一规律','否定之否定规律','现象本质关系'], a:1 },
+      { q:`从马克思主义认识论看，"${topic}"说明了什么？`, o:['实践是认识的来源','感性认识的重要性','真理的绝对性','认识的反复性'], a:0 },
+      { q:`"${topic}"中矛盾的主要方面是？`, o:['内因','外因','条件','环境'], a:0 },
+      { q:`马克思关于"${topic}"的经济学分析核心是？`, o:['劳动价值论','剩余价值论','资本积累论','危机理论'], a:1 },
+      { q:`"${topic}"在方法论上给我们的启示是？`, o:['具体问题具体分析','抓住主要矛盾','把握度','一切从实际出发'], a:3 }
+    ],
+    '法律': [
+      { q:`关于"${topic}"，最新法律修订的变化方向是？`, o:['强化权利保护','简化程序','加重处罚','扩大范围'], a:0 },
+      { q:`"${topic}"涉及的宪法原则是什么？`, o:['人民主权','法治原则','权力制约','人权保障'], a:1 },
+      { q:`民法典中与"${topic}"直接相关的条款属于哪一编？`, o:['总则编','物权编','合同编','侵权责任编'], a:3 },
+      { q:`"${topic}"的司法实践中，举证责任如何分配？`, o:['谁主张谁举证','举证责任倒置','法院取证','推定'], a:0 },
+      { q:`"${topic}"的立法目的是什么？`, o:['维护秩序','保护权益','促进发展','规范行为'], a:1 }
+    ],
+    '科技文史地理': [
+      { q:`关于"${topic}"，以下哪项描述准确？`, o:['是自然遗产','是文化遗产','是双重遗产','是文化景观'], a:0 },
+      { q:`"${topic}"与云南地理环境的关系是？`, o:['直接相关','间接影响','偶然现象','无关'], a:0 },
+      { q:`"${topic}"在科技发展史中的地位是？`, o:['国际领先','国内领先','起步阶段','追赶阶段'], a:1 },
+      { q:`从文化角度看，"${topic}"体现了什么特质？`, o:['多样性','统一性','封闭性','单一性'], a:0 },
+      { q:`"${topic}"对云南经济社会发展的贡献体现在？`, o:['旅游经济','文化传承','生态保护','以上都是'], a:3 }
+    ],
+    '言语理解': [
+      { q:`关于这段话的写作意图，最准确的是？`, o:['说明事实','分析原因','提出建议','批评现状'], a:0 },
+      { q:`这段文字中"${topic}"一词的作用是？`, o:['强调主题','承上启下','概括总结','引出观点'], a:1 },
+      { q:`与原文逻辑关系最接近的关联词是？`, o:['因此','然而','而且','虽然'], a:0 },
+      { q:`以下哪项最能概括这段文字的中心思想？`, o:['现象描述','问题分析','对策建议','趋势预测'], a:0 },
+      { q:`这段文字隐含的前提假设是？`, o:['读者具备基本背景知识','信息准确可靠','观点已被普遍接受','问题亟待解决'], a:0 }
+    ],
+    '判断推理': [
+      { q:`以下哪项与题干中的逻辑关系最为相似？`, o:['整体与部分','种属关系','因果关系','并列关系'], a:0 },
+      { q:`若要削弱该论证，最有效的方式是？`, o:['否定前提','提出反例','指出来源不可靠','指出逻辑跳跃'], a:1 },
+      { q:`该定义的关键要素是？`, o:['主体','行为','结果','以上都是'], a:3 },
+      { q:`以下哪项如果为真，最能支持原结论？`, o:['补充正向证据','排除他因','建立因果链','增强样本代表性'], a:2 },
+      { q:`该推理中隐含的假设是？`, o:['样本具有代表性','概念界定一致','因果关系成立','分类标准唯一'], a:1 }
+    ],
+    '数量关系': [
+      { q:`将原题中的数字改为${Math.floor(Math.random()*20+10)}和${Math.floor(Math.random()*10+5)}，结果是多少？`, o:['8','10','12','15'], a:1 },
+      { q:`如果改用方程思想解决，设变量为x，方程是？`, o:['x/12+x/8=1','x(1/12+1/8)=1','x=12+8','x=12×8'], a:1 },
+      { q:`该题型在国考中的高频变形是？`, o:['交替合作','多人合作有休息','效率变化','以上都是'], a:3 },
+      { q:`该题的速算技巧是什么？`, o:['赋值法','十字交叉','比例法','方程法'], a:0 },
+      { q:`如果增加一个条件"效率提高20%"，答案将变为？`, o:['增大','减小','不变','不确定'], a:1 }
+    ],
+    '资料分析': [
+      { q:`该题的速算技巧是？`, o:['截位直除','特征数字','百化分','估算'], a:0 },
+      { q:`若增长率改为${Math.floor(Math.random()*15+5)}%，结果变为？`, o:['增大','减小','不变','不确定'], a:0 },
+      { q:`该题容易掉入的陷阱是？`, o:['时间陷阱','单位陷阱','概念混淆','估算误差'], a:2 },
+      { q:`该题型在2026年云南选调中的考察频次是？`, o:['高频','中频','低频','未考察'], a:0 },
+      { q:`计算该题的另一种方法是？`, o:['比重增量公式','基期比重公式','平均数增长率','以上均可'], a:3 }
+    ]
+  };
+
+  // Fallback questions if category not found
+  const cats = Object.keys(templates);
+  let tpl = templates[cat];
+  if (!tpl) tpl = templates[cats[Math.floor(Math.random()*cats.length)]];
+
+  for (let i = 0; i < 5 && i < tpl.length; i++) {
+    derived.push(tpl[i]);
+  }
+  // Pad if not enough
+  while (derived.length < 5) {
+    derived.push({
+      q: `关于"${topic}"的进一步深入考察：以下哪项理解最准确？`,
+      o: ['理解A','理解B','理解C','理解D'],
+      a: 0
+    });
+  }
+  return derived;
+}
+
+function clearAllStats() {
+  if (!confirm('确定要重置所有统计数据吗？已收集的错题也将被清空。')) return;
+  Object.keys(state.history).forEach(c => {
+    state.history[c] = { total:0, correct:0, wrong:0, errors:[] };
+  });
+  state.wrongQuestions = [];
+  updateStats();
+  updateErrorList();
+}
+
+// ===================== SOCRATIC MODE =====================
+function switchSocCategory(cat) {
+  state.currentCat = cat;
+  document.querySelectorAll('#socTopicFilter .cat-tag').forEach(t => t.classList.toggle('active', t.textContent===cat));
+  generateSocTopics(cat);
+}
+
+function generateSocTopics(cat) {
+  const topics = {
+    '新思想': ['中国特色社会主义最本质特征','五位一体总体布局','四个全面战略布局','新发展理念','人类命运共同体','全过程人民民主','新质生产力'],
+    '全国时政': ['十五五规划要点','2025政府工作报告','二十届四中全会精神','新质生产力','高质量发展','金融强国建设','人工智能+'],
+    '云南省情': ['3815战略目标','中老铁路战略意义','三张牌升级三大经济','25个边境县','民族团结示范区','云南三江并流','高原特色农业'],
+    '党史': ['扎西会议的历史意义','遵义会议','延安整风','十一届三中全会','中共一大','古田会议','二十大'],
+    '马原': ['实践是检验真理的唯一标准','量变与质变','矛盾的对立统一','商品二因素','剩余价值论','感性认识与理性认识','经济基础与上层建筑'],
+    '法律': ['宪法最高法律效力','民法典自甘风险规则','行政复议集中管辖','无过错责任原则','法定继承顺序','首违不罚'],
+    '科技文史地理': ['云南地形特征','天宫空间站','元谋人遗址','茶马古道','三江并流','世界文化遗产哈尼梯田','云南世居少数民族'],
+    '言语理解': ['主旨概括技巧','逻辑填空语境分析','语句排序方法','语句衔接原则','细节理解陷阱','词句理解'],
+    '判断推理': ['定义判断核心方法','类比推理逻辑关系','削弱型论证','加强型论证','三段论推理','因果推理'],
+    '数量关系': ['工程问题赋值法','经济利润问题','行程问题','容斥问题','溶液问题','牛吃草问题'],
+    '资料分析': ['增长率计算','基期量计算','比重问题','平均数增长率','速算技巧','倍数关系']
+  };
+  const topicList = topics[cat] || ['知识点1','知识点2','知识点3','知识点4'];
+  document.getElementById('socTopicList').innerHTML = topicList.map(t =>
+    `<span class="soc-topic" onclick="startSocratic('${cat}','${t}')">${t}</span>`
+  ).join('');
+}
+
+function startSocratic(cat, topic) {
+  state.socraticActive = true;
+  state.socraticTopic = topic;
+  state.socraticMessages = [];
+  state.socraticQuestionCount = 0;
+  document.getElementById('socChatArea').style.display = 'block';
+  document.getElementById('socStartHint').style.display = 'none';
+  document.getElementById('socChatLog').innerHTML = '';
+  document.getElementById('socInput').value = '';
+  document.getElementById('socInput').focus();
+
+  // First question
+  const firstQ = getFirstSocraticQuestion(cat, topic);
+  addSocraticMessage(firstQ, 'ai');
+}
+
+function getFirstSocraticQuestion(cat, topic) {
+  // Generate a dynamic first question based on topic
+  const intros = {
+    '新思想': `好的，我们来讨论"${topic}"。先问一个基本的：你能用自己的话解释一下"${topic}"的核心含义是什么吗？`,
+    '全国时政': `关于"${topic}"，我们先从最基础的说起：这个概念提出的背景是什么？你能简要说明吗？`,
+    '云南省情': `"${topic}"是云南发展的重要战略。首先告诉我，这个战略包含哪些核心内容？不需要背课本，用自己的理解说。`,
+    '党史': `我们来探讨"${topic}"。先说说，这个事件/会议发生在什么历史背景下？当时面临的主要问题是什么？`,
+    '马原': `好，我们来深挖"${topic}"。首先，这个概念的基本内涵你理解吗？用日常生活的例子说明一下。`,
+    '法律': `关于"${topic}"，我们先从最核心的谈起：这个法律制度设计的目的是什么？它要保护什么？`,
+    '科技文史地理': `"${topic}"这个知识点涵盖了哪些方面？你先大致说说你的理解。`,
+    '言语理解': `好，关于"${topic}"，我们先说说这类题型的核心解题思路是什么？`,
+    '判断推理': `"${topic}"这类题目考察的是什么逻辑能力？先说说你的理解。`,
+    '数量关系': `"${topic}"这种题型的核心公式是什么？先写出来或说出来。`,
+    '资料分析': `"${topic}"的速算技巧有哪些？你先列举一下。`
+  };
+  return intros[cat] || `我们来探讨"${topic}"。首先，请说说你对这个概念的基本理解。`;
+}
+
+function addSocraticMessage(text, sender) {
+  state.socraticMessages.push({text, sender});
+  const log = document.getElementById('socChatLog');
+  log.innerHTML += `<div class="socratic-msg socratic-${sender}">${text}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+function sendSocraticReply() {
+  const input = document.getElementById('socInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addSocraticMessage(text, 'user');
+  input.value = '';
+
+  state.socraticQuestionCount++;
+
+  // Generate follow-up question based on conversation depth
+  const followUp = getFollowUpQuestion(state.currentCat, state.socraticTopic, state.socraticQuestionCount, text);
+  setTimeout(() => addSocraticMessage(followUp, 'ai'), 500);
+}
+
+function getFollowUpQuestion(cat, topic, round, lastAnswer) {
+  if (round >= 5) {
+    return '很好！通过这轮提问，你对该知识点的理解已经比较深入了。总结一下：' +
+      getSummary(cat, topic) +
+      ' 还想继续深入探讨吗？还是换个话题？';
+  }
+
+  const followUps = {
+    '新思想': [
+      '你说得很好。那"${topic}"与我们日常生活有什么关系？能举个例子吗？',
+      '联系得很好。但还有个关键点：${topic}的理论创新在哪里？跟过去的提法有什么不同？',
+      '理解正确。那${topic}在实践中如何落地？遇到的主要困难是什么？',
+      '说得有道理。那你能对比一下，这个理念与西方类似概念的本质区别是什么？'
+    ],
+    '全国时政': [
+      '你说得不错。那这个政策与"十五五"规划的衔接体现在哪里？',
+      '好的，那推进${topic}过程中，当前面临的最大挑战是什么？',
+      '很到位。那从老百姓的角度看，${topic}会带来哪些实际变化？',
+      '更深一层想：${topic}与高质量发展之间的关系是什么？'
+    ],
+    '云南省情': [
+      '说得对。那这个战略在云南各州市的落实有什么差异？能举例吗？',
+      '不错。那${topic}与云南"三大经济"如何相互促进？',
+      '理解正确。那${topic}面临的制约因素有哪些？如何破解？',
+      '好。那从这个角度看，云南与周边省份（比如贵州、广西）的竞争优劣势是什么？'
+    ],
+    '党史': [
+      '基本准确。那你能再想想，${topic}之前发生了什么、之后又有什么后续影响？',
+      '对。那${topic}中体现的哪些原则对我们今天仍有指导意义？',
+      '说得不错。那如果放在更长的历史脉络中，${topic}处于什么样的地位？',
+      '好问题。那你能把${topic}与当前全面从严治党的要求联系起来吗？'
+    ],
+    '马原': [
+      '例子贴切。那这个原理的反面是什么？如果违背了会有什么后果？',
+      '对。那这个哲学原理在现实工作中有哪些应用？能举个例子吗？',
+      '很好。那${topic}与另一个相关概念（比如${getRelatedConcept(cat)}）有什么区别和联系？',
+      '不错。那我们来做个思想实验：如果这个原理不成立，世界会是什么样？'
+    ],
+    '法律': [
+      '基本理解正确。那这个规定有没有例外情形？什么情况下不适用？',
+      '好的。那${topic}在实际案例中是如何适用的？能想一个场景吗？',
+      '对。那这个法律制度与其他相关制度如何衔接？比如${topic}与行政诉讼的关系？',
+      '很好。那反思一下：这个制度设计有没有需要完善的地方？可能存在什么问题？'
+    ],
+    '科技文史地理': [
+      '说得不错。那这个知识点与云南的地理/历史/文化特征有什么内在联系？',
+      '对。那${topic}背后的科学原理/历史逻辑是什么？为什么会这样？',
+      '很好。那${topic}对云南的经济社会发展有哪些实际影响？',
+      '不错。那我们可以反过来思考：如果没有${topic}，云南会有什么不同？'
+    ],
+    '言语理解': [
+      '思路对。那如果遇到两难选项，你的排除原则是什么？',
+      '好的。那你有没有总结出这类题型的"陷阱"特征？常见错误选项有什么规律？',
+      '嗯。那实际做题时，你一般用多少时间做完一道言语题？如何提速？',
+      '好。那言语理解与其他模块（如判断推理）的解题思维有什么异同？'
+    ],
+    '判断推理': [
+      '好的。那这个题型中，最常见的干扰项设置方式是什么？',
+      '对。那你在做这类题时，通常按照什么步骤来？能不能归纳一下？',
+      '嗯。那这道题如果变个条件，答案会变吗？比如把"削弱"改成"加强"。',
+      '不错。那你觉得这个知识点在2026年行测中可能怎么考？能预测一下吗？'
+    ],
+    '数量关系': [
+      '公式对了。那你能举个实际生活中的例子来应用这个公式吗？',
+      '好。那如果题目条件变一下（比如多人合作变成轮流工作），思路怎么调整？',
+      '对的。那这个题型在限时条件下，你一般用哪种解法最快？',
+      '很好。那这个知识点与其他数量关系题型有什么交叉？比如工程和行程的结合。'
+    ],
+    '资料分析': [
+      '不错。那在时间紧张的情况下，你会优先使用哪种速算方法？',
+      '好的。那资料分析中容易掉进的"时间陷阱"和"单位陷阱"有哪些？',
+      '对。那如果选项差距很小，你的计算策略是什么？',
+      '嗯。那综合来看，资料分析最高效的做题顺序和时间分配是怎样的？'
+    ]
+  };
+
+  const qs = followUps[cat] || [
+    '你说得不错，但还可以更深入一些。${topic}的本质特征是什么？',
+    '好。那么${topic}与其他相关概念有什么区别和联系？',
+    '对。但我们需要逆向思维：如果${topic}不成立，会怎样？',
+    '很好。总结一下你刚才说的，用最简洁的话概括${topic}的核心。'
+  ];
+
+  const idx = Math.min(round - 1, qs.length - 1);
+  return qs[idx].replace(/\$\{topic\}/g, topic);
+}
+
+function getRelatedConcept(cat) {
+  const map = {
+    '马原': '否定之否定规律',
+    '法律': '过错责任原则',
+    '科技文史地理': '云南生物多样性',
+  };
+  return map[cat] || '相关概念';
+}
+
+function getSummary(cat, topic) {
+  const summaries = {
+    '新思想': `${topic}是习近平新时代中国特色社会主义思想的重要组成部分，其核心在于坚持党的领导、以人民为中心，推动中国式现代化。关键要理解其理论创新和与实践的结合。`,
+    '全国时政': `${topic}是当前国家战略的核心内容，与"十五五"规划、高质量发展一脉相承。重点把握政策背景、主要内容、实践路径三个层次。`,
+    '云南省情': `${topic}是云南发展的关键战略/资源，与"3815"战略、"三大经济"紧密相连。重点理解其对云南的独特意义和落实路径。`,
+    '党史': `${topic}是党的历史上的重要节点，关键要把握其前因后果、历史意义和对当下的启示。注意长时段的历史脉络分析。`,
+    '马原': `${topic}是马克思主义基本原理的核心内容，重点掌握其定义、辩证关系及现实应用。考试常考名言与原理的对应。`,
+    '法律': `${topic}是法律常识的高频考点，关键要理解其设计目的、适用条件和例外情形。注意2024-2025年新法修订内容。`,
+    '科技文史地理': `${topic}是科技文史地理的综合考点，既要记事实也要理解背后的逻辑关联。云南特色（地形、少数民族、文化遗产）是重点。`,
+    '言语理解': `${topic}的解题关键在于把握文段结构、逻辑关系和作者意图。注意排除绝对化选项和无中生有的干扰项。`,
+    '判断推理': `${topic}的核心是逻辑关系的准确识别和论证结构的分析。注意区分削弱/加强的不同力度和类比中的逻辑关系类型。`,
+    '数量关系': `${topic}的核心是公式掌握和速算技巧。注意赋值法、方程法、十字交叉等方法的灵活运用。`,
+    '资料分析': `${topic}的要点是速算公式和避坑技巧。注意时间、单位、概念三大陷阱，掌握截位直除和特征数字法。`
+  };
+  return summaries[cat] || `${topic}是考试重点，需要从定义、特征、应用三个层面全面掌握。`;
+}
+
+function endSocraticSession() {
+  state.socraticActive = false;
+  document.getElementById('socChatArea').style.display = 'none';
+  document.getElementById('socStartHint').style.display = 'block';
+  document.getElementById('socChatLog').innerHTML = '';
+  state.socraticMessages = [];
+  state.socraticQuestionCount = 0;
+}
+
+// ===================== COLOR HELPERS =====================
+function getCatColor(cat, type) {
+  const colors = {
+    '新思想':'#1a73e8','全国时政':'#e8710a','云南省情':'#0f9d58','党史':'#d93025',
+    '马原':'#9334e6','法律':'#185abc','科技文史地理':'#00897b','言语理解':'#e8450a',
+    '判断推理':'#1565c0','数量关系':'#6d4c41','资料分析':'#2e7d32'
+  };
+  const c = colors[cat] || '#666';
+  if (type === 'bg') return c + '20';
+  return c;
+}
+
+// ===================== ANALYSIS MODULE =====================
+function renderAnalysis() {
+  renderTimeline();
+  renderChart1();
+  renderChart2();
+  renderChart3();
+  renderChart4();
+  renderStrategy();
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('examTimeline');
+  tl.innerHTML = examData.map(d =>
+    `<div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-year">${d.year}</div>
+      <div class="tl-detail">${d.note} | 公基${d.gongji}题 + 行测${d.xingce}题 | 总分100分</div>
+    </div>`
+  ).join('');
+}
+
+function renderChart1() {
+  const ctx = document.getElementById('chartComposition').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: examData.map(d => d.year),
+      datasets: [
+        { label:'公基', data:examData.map(d=>d.gongji), backgroundColor:'#1a73e8', borderRadius:4 },
+        { label:'行测', data:examData.map(d=>d.xingce), backgroundColor:'#e8710a', borderRadius:4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { x:{ stacked:true }, y:{ stacked:true, max:100, title:{display:true,text:'题量'}} },
+      plugins: { legend:{ position:'top' } }
+    }
+  });
+}
+
+function renderChart2() {
+  const ctx = document.getElementById('chartXingce').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: examData.map(d => d.year),
+      datasets: [
+        { label:'言语理解', data:examData.map(d=>d.xingceDetail.yanyu), backgroundColor:'#e8450a' },
+        { label:'判断推理', data:examData.map(d=>d.xingceDetail.panduan), backgroundColor:'#1565c0' },
+        { label:'数量关系', data:examData.map(d=>d.xingceDetail.shuliang), backgroundColor:'#6d4c41' },
+        { label:'资料分析', data:examData.map(d=>d.xingceDetail.ziliao), backgroundColor:'#2e7d32' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y:{ beginAtZero:true, title:{display:true,text:'题量'} } },
+      plugins: { legend:{ position:'top' } }
+    }
+  });
+}
+
+function renderChart3() {
+  const ctx = document.getElementById('chartGongji').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: examData.map(d => d.year),
+      datasets: [
+        { label:'时政', data:examData.map(d=>d.gongjiDetail.shizheng), backgroundColor:'#e8710a' },
+        { label:'省情', data:examData.map(d=>d.gongjiDetail.shengqing), backgroundColor:'#0f9d58' },
+        { label:'法律', data:examData.map(d=>d.gongjiDetail.falv), backgroundColor:'#185abc' },
+        { label:'党史', data:examData.map(d=>d.gongjiDetail.dangshi), backgroundColor:'#d93025' },
+        { label:'马原', data:examData.map(d=>d.gongjiDetail.maKe), backgroundColor:'#9334e6' },
+        { label:'科技文史', data:examData.map(d=>d.gongjiDetail.keji), backgroundColor:'#00897b' },
+        { label:'地理', data:examData.map(d=>d.gongjiDetail.dili), backgroundColor:'#5f6368' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y:{ beginAtZero:true, title:{display:true,text:'题量'} } },
+      plugins: { legend:{ position:'top' } }
+    }
+  });
+}
+
+function renderChart4() {
+  const ctx = document.getElementById('chartScore').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: examData.map(d => d.year),
+      datasets: [{
+        label:'行测分值占比(%)',
+        data: examData.map(d => d.xingce),
+        borderColor:'#e8710a',
+        backgroundColor:'#e8710a20',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor:'#e8710a'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y:{ beginAtZero:true, max:60, title:{display:true,text:'题量占比'} } },
+      plugins: { legend:{ position:'top' } }
+    }
+  });
+}
+
+function renderStrategy() {
+  document.getElementById('strategyContent').innerHTML = `
+<div style="font-size:14px;line-height:1.8;">
+<p><strong>🎯 基于2021-2026年考情演变的核心备考策略：</strong></p>
+<br>
+<p><strong>1. 行测地位急剧上升（从0→50题）</strong></p>
+<p>2021年无行测→2026年行测占50题/50%。这是最大变化。必须投入50%以上备考时间在行测。</p>
+<p><strong>行测各模块优先级：</strong> 判断推理(16题) > 资料分析(12题) > 言语理解(12题) > 数量关系(10题)</p>
+<br>
+<p><strong>2. 公基内容大幅缩减但仍不可忽视（100→50题）</strong></p>
+<p>公基从100题降到50题，但仍是半壁江山。时政(16题)和省情(8题)是公基两大核心，合计占公基48%。</p>
+<br>
+<p><strong>3. 省情时政"降温"，全国时政"升温"</strong></p>
+<p>2026年云南省情考察很少（仅8题），全国时政和政治理论成为公基主体。这与"十五五"规划开局有关。</p>
+<br>
+<p><strong>4. 公基核心考点排序（按题量）：</strong></p>
+<p>全国时政/政治理论(16题) > 法律(7题) > 云南省情(8题) > 党史(5题) = 马原(5题) > 科技文史地理(9题)</p>
+<br>
+<p><strong>5. 时间分配建议（120分钟100题）：</strong></p>
+<p>判断推理(25min) → 资料分析(20min) → 言语理解(20min) → 数量关系(15min) → 公基(35min) → 涂卡检查(5min)</p>
+<br>
+<p><strong>6. 备考资料优先级：</strong></p>
+<p>① 云南定向选调历年真题（已收集2015-2025年回忆版）</p>
+<p>② 国考行测真题（2026年命题倾向于国考风格）</p>
+<p>③ 公基题库（时政+法律+党史+马原）</p>
+<p>④ 云南省情专项（政府工作报告、"3815"战略、三大经济）</p>
+<br>
+<p><strong>7. 关键提醒：</strong></p>
+<p>• 2026年起行测题量已占半壁江山，死记硬背已无法取胜</p>
+<p>• 资料分析和数量关系是拉分关键（计算量大）</p>
+<p>• 多选题已取消，全为单选题，策略上更应追求准确率</p>
+<p>• 答题卡有AB卷横竖涂卡差异，务必仔细</p>
+</div>`;
+}
+
+// ===================== INIT =====================
+window.onload = init;
+</script>
+</body>
+</html>
