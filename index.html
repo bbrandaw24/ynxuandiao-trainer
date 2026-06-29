@@ -455,12 +455,39 @@ regQ('资料分析', [
   { q:'比重变化：2024年工业增加值占GDP比重38%，2025年工业增8%，GDP增10%，2025年比重？', o:['增加','减少','不变','无法判断'], a:1, e:'部分增速8%<整体增速10%，比重下降。' }
 ]);
 
+// ===================== PERSISTENCE =====================
+const STORAGE_KEY = 'ynxuandiao_state';
+function saveState() {
+  try {
+    const data = {
+      history: state.history,
+      wrongQuestions: state.wrongQuestions,
+      socraticDialogues: state.socraticDialogues
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) { /* ignore storage errors */ }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data.history) state.history = data.history;
+    if (data.wrongQuestions) state.wrongQuestions = data.wrongQuestions;
+    if (data.socraticDialogues) state.socraticDialogues = data.socraticDialogues;
+    return true;
+  } catch(e) { return false; }
+}
+function clearState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 // ===================== APP STATE =====================
 let state = {
   mode: 'quiz',
   currentCat: '新思想',
   currentIdx: 0,
-  history: {},  // cat -> {total,correct,wrong,errors:[{q,selected,correct,answer,explanation,derived:[]}]}
+  history: {},  // cat -> {total,correct,wrong,errors:[...]}
   answered: false,
   wrongQuestions: [],  // aggregated all errors
   socraticDialogues: [],
@@ -472,13 +499,17 @@ function init() {
   const tabs = document.getElementById('categoryTabs');
   tabs.innerHTML = cats.map(c => `<button class="nav-tab${c===state.currentCat?' active':''}" onclick="switchCategory('${c}')">${c}</button>`).join('');
 
-  // Init socratic — show wrong questions
-  refreshSocErrors();
+  // Restore saved state
+  const restored = loadState();
+  if (restored) {
+    // ensure all categories have entries
+    cats.forEach(c => { if (!state.history[c]) state.history[c] = { total:0, correct:0, wrong:0, errors:[] }; });
+  } else {
+    cats.forEach(c => { state.history[c] = { total:0, correct:0, wrong:0, errors:[] }; });
+  }
 
-  // Init stats
-  cats.forEach(c => {
-    state.history[c] = { total:0, correct:0, wrong:0, errors:[] };
-  });
+  // Init socratic
+  refreshSocErrors();
 
   loadQuestion();
   updateStats();
@@ -589,6 +620,7 @@ function submitAnswer() {
 
   updateStats();
   updateErrorList();
+  saveState();
 }
 
 function markAsUnknown() {
@@ -627,6 +659,7 @@ function markAsUnknown() {
 
   updateStats();
   updateErrorList();
+  saveState();
 }
 
 function nextQuestion() {
@@ -820,6 +853,8 @@ function clearAllStats() {
     state.history[c] = { total:0, correct:0, wrong:0, errors:[] };
   });
   state.wrongQuestions = [];
+  state.socraticDialogues = [];
+  saveState();
   updateStats();
   updateErrorList();
 }
