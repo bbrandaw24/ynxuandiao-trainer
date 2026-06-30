@@ -246,130 +246,19 @@ function uS(){
 }
 
 function uE(){
-  var al=S.ws;var ac=al.filter(function(e){return !e._dis});var di=al.filter(function(e){return e._dis});
-  document.getElementById('erL').textContent='('+al.length+'，待消'+ac.length+')';
+  var al=S.ws;
+  document.getElementById('erL').textContent='('+al.length+')';
   if(!al.length){document.getElementById('erLst').innerHTML='<p style="color:var(--t2);text-align:center;padding:14px">暂无错题</p>';return}
   var h='';
-  ac.forEach(function(e,i){
-    var ri=al.indexOf(e);var p=e.dc?'<span style=font-size:11px;color:var(--primary);margin-left:6px>'+e.dc+'/5</span>':'';
-    h+='<div class=ei onclick="tE('+ri+')"><div class=eq>['+e.ct+'] '+(e.q.length>50?e.q.slice(0,50)+'...':e.q)+p+'</div><div class=ed>你选：<span class=wa>'+(e.uk?'不会':L[e.sl])+'</span> | 对：<span class=ra>'+L[e.cr]+'</span></div><div id=eD'+ri+' style=display:none;margin-top:6px><p style=font-size:12px;color:var(--t2);padding:6px;background:#f8f9fa;border-radius:4px>'+e.ex+'</p><div id=dRb'+ri+'><button class="btn btn-sm btn-p" onclick="gD('+ri+');event.stopPropagation()">生成衍生题</button><div id=dRc'+ri+'></div></div></div></div>'
+  al.forEach(function(e,i){
+    h+='<div class=ei onclick="tE('+i+')"><div class=eq>['+e.ct+'] '+(e.q.length>50?e.q.slice(0,50)+'...':e.q)+'</div><div class=ed>你选：<span class=wa>'+(e.uk?'不会':L[e.sl])+'</span> | 对：<span class=ra>'+L[e.cr]+'</span> <span style=float:right;color:var(--err);cursor:pointer onclick="event.stopPropagation();rmE('+i+')">✕ 删除</span></div><div id=eD'+i+' style=display:none;margin-top:6px><p style=font-size:12px;color:var(--t2);padding:6px;background:#f8f9fa;border-radius:4px>'+e.ex+'</p></div></div>'
   });
-  if(di.length)h+='<details style=margin-top:10px><summary style=font-size:12px;color:var(--t2);cursor:pointer>已消('+di.length+'道)</summary>'+di.map(function(e){return '<div style=padding:6px;font-size:12px;color:var(--t2);border-bottom:1px solid var(--bd)>['+e.ct+'] '+(e.q.length>50?e.q.slice(0,50)+'...':e.q)+' <span style=color:var(--ok)>✓</span></div>'}).join('')+'</details>';
   document.getElementById('erLst').innerHTML=h;
 }
 function tE(i){var e=document.getElementById('eD'+i);e.style.display=e.style.display==='none'?'block':'none'}
+function rmE(i){if(!confirm('删除这条错题？'))return;S.ws.splice(i,1);uE();sv()}
 
 // ===== DERIVED =====
-var dS={};
-var DT={新思想:[
-{q:'习近平新时代中国特色社会主义思想强调中国特色社会主义最本质的特征是党的领导，与人民民主专政的关系如何理解？',o:['本质特征是党，国体是人民民主专政，层次不同','二者完全相同','人民民主专政比党的领导更根本','党的领导是国体'],a:0},
-{q:'"五位一体"和"四个全面"的逻辑关系是？',o:['总体布局横向覆盖，战略布局纵向推进','二者并列互不隶属','战略布局是总体布局的细化','二者目标不同'],a:0},
-{q:'习近平生态文明思想的核心理念"绿水青山就是金山银山"主要解决什么问题？',o:['经济发展与生态保护的辩证统一','仅解决环境污染问题','仅解决经济增长问题','仅解决气候变化问题'],a:0},
-{q:'新发展理念中哪一理念主要解决发展内外联动问题？',o:['创新','协调','绿色','开放'],a:3},
-{q:'"全过程人民民主"与西方代议制民主的核心区别是？',o:['涵盖选举决策管理监督全链条而非仅投票','中国不搞选举','西方不搞民主','中国不要投票'],a:0},
-{q:'习近平法治思想首要坚持的是什么？',o:['依宪治国','党的领导','人民主体地位','依法治国'],a:1},
-{q:'"双循环"新发展格局提出的时代背景是什么？',o:['国际环境变化叠加国内需求结构升级','单纯应对贸易战','放弃国际市场','短期政策'],a:0},
-{q:'共同富裕最艰巨最繁重的任务在农村，主要原因是？',o:['城乡收入差距约2.5倍，基础设施和公共服务短板明显','农村人口太多','农民不愿意致富','国家不重视农村'],a:0},
-{q:'"一带一路"倡议中"一带"和"一路"分别侧重什么？',o:['一带连接亚欧大陆腹地，一路连接海上贸易通道','一带不重要','一路不重要','两者相同'],a:0},
-{q:'新"四个全面"与原来相比最大的变化是什么？',o:['全面建成小康社会升级为全面建设社会主义现代化国家','其他三个全面也变了','内容没变','顺序变了'],a:0}
-],
-全国时政:[
-{q:'二十届三中全会与四中全会的关系，以下理解正确的是？',o:['三中全会部署机构改革，四中全会部署全面深化改革，递进推进','两次议题无关','四中全会比三中全会重要','三中全会比四中全会重要'],a:0},
-{q:'2025年GDP目标5%左右的经济学逻辑是什么？',o:['综合考虑就业需要、潜在增长率和外部环境不确定性','随意确定的','越高越好','越低越好'],a:0},
-{q:'"十五五"规划的核心任务是？',o:['科技创新自立和碳达峰攻坚，衔接2035年目标','继续高速增长','扩大债务','提高出口'],a:0},
-{q:'新质生产力三个特征是什么？',o:['高科技、高效能、高质量','高投入、高产出、高回报','大规模、高速度、高能耗','低投入、低产出、低能耗'],a:0},
-{q:'中央金融工作会议"五篇大文章"包括以下哪项？',o:['科技金融、绿色金融、普惠金融、养老金融、数字金融','互联网金融、消费金融','房地产金融','政府金融'],a:0}
-],
-云南省情:[
-{q:'"3815"战略中从"3"到"8"到"15"体现了什么发展逻辑？',o:['先打基础再加速最后实现现代化，渐进式追赶','三个阶段目标相同','可以一步到位','不需要分阶段'],a:0},
-{q:'中老铁路使云南从交通末端变为开放前沿的经济学含义是？',o:['区位优势从地理概念转化为实际贸易成本优势','云南变成了交通枢纽','GDP自动增长','老挝经济被控制'],a:0},
-{q:'"三张牌"升级为"三大经济"体现的政策思路转变是？',o:['从产业品牌思维转向系统发展思维，更强调载体和通道','换提法而已','放弃原有产业','全部推倒重来'],a:0},
-{q:'云南25个边境县对建设辐射中心的最大价值是？',o:['为与南亚东南亚的跨境合作提供地理基础和通道条件','边疆难以发展','边境线越长越好','边境县不重要'],a:0},
-{q:'云南独有的少数民族有几个？各分布在哪些州市？',o:['4个：独龙族(怒江)、德昂族(德宏)、基诺族(版纳)、怒族(怒江)','5个','3个','6个'],a:0}
-],
-党史:[
-{q:'扎西会议与遵义会议的关系是？',o:['遵义定方向扎西落组织，前后衔接缺一不可','扎西比遵义重要','遵义比扎西重要','两次重复'],a:0},
-{q:'中共一大从上海转移到嘉兴南湖的原因是什么？',o:['法租界巡捕搜查导致地点暴露，转移至不易引人注意的游船','代表们想换地方','上海太热','会期不够'],a:0},
-{q:'八七会议"枪杆子里出政权"和古田会议"党指挥枪"的逻辑关系？',o:['八七解决为什么要有武装的问题，古田解决武装听谁的问题，从认识到制度递进','两者无关','八七解决组织问题','古田解决军事问题'],a:0},
-{q:'遵义会议前红军最紧迫的问题是什么？',o:['湘江战役惨败（8.6万人减至3万），军事指挥生死攸关','没有粮食','没有地图','没有援军'],a:0},
-{q:'延安整风反对主观主义主要指什么？',o:['以王明为代表的教条主义，照搬马列词句不顾中国实际','所有主观想法','个人主义','自由主义'],a:0}
-],
-马原:[
-{q:'为什么说马克思主义哲学是"实践的唯物主义"？',o:['因为它强调通过实践改变世界而不仅仅是解释世界','因为它注重理论学习','因为它来源于实践','因为它指导实践'],a:0},
-{q:'量变质变规律在生活中的应用举例，以下哪个最能说明？',o:['水滴石穿——每滴水是量变，穿石是质变','太阳东升西落','春天过去是夏天','日出而作'],a:0},
-{q:'剩余价值理论揭示了资本家剥削的秘密在于？',o:['购买劳动力支付工资，但工人劳动创造的价值大于工资','资本家不劳而获','工人太懒','机器太先进'],a:0},
-{q:'"内因是变化的根据"在个人成长中如何理解？',o:['外部条件相同的情况下，个人努力（内因）决定成败','环境决定一切','机遇最重要','家庭背景是全部'],a:0},
-{q:'感性认识与理性认识的关系说明"没有调查就没有发言权"的道理是？',o:['理性认识依赖感性认识，没有调查获得感性材料就无法正确分析','感性认识比理性重要','理性认识不需要材料','调查就是一切'],a:0}
-],
-法律:[
-{q:'行政复议"集中管辖"改革要解决的核心问题是？',o:['原来部门自己当自己法官的公正性问题','减少复议数量','增加复议机关','取消复议'],a:0},
-{q:'宪法监督制度中保障公民宪法权利的主要机制是？',o:['备案审查——全国人大常委会有权撤销与宪法抵触的法规','法院直接判宪','公民直接引用宪法起诉','不需要监督'],a:0},
-{q:'民法典"绿色原则"的立法理念是？',o:['将绿色发展理念融入民事活动，节约资源保护生态环境','环保高于一切','合同必须环保','违反绿色原则无效'],a:0},
-{q:'"首违不罚"与"违法必究"的关系是？',o:['首违不罚是教育与处罚相结合的具体化，不等于所有首次违法都不罚','二者矛盾','首违不罚取代违法必究','违法必究已过时'],a:0},
-{q:'产品缺陷无过错责任的法理基础是？',o:['消费者无法了解生产过程，让生产者证明自己无过错不公平','生产者总是有过错的','消费者应自己小心','政府赔偿'],a:0}
-],
-科技文史地理:[
-{q:'云南地形"山高谷深"对交通和经济发展的主要制约是什么？',o:['桥隧比高建设成本大，但同时也造就了生物多样性和旅游资源','没有任何制约','反而促进交通','与经济无关'],a:0},
-{q:'中国天宫空间站的"积木式构型"与国际空间站的"桁架式构型"最主要的区别是？',o:['天宫在轨组装更灵活，模块化程度更高','天宫更大','国际空间站是中国的','二者相同'],a:0},
-{q:'FAST选址贵州平塘主要是利用了哪种地质条件？',o:['喀斯特洼地天然形成球面反射面，地质稳定','平原','盆地','丘陵'],a:0},
-{q:'梅里雪山卡瓦格博峰被禁止攀登的主要原因是？',o:['1991年登山队17人遇难后出于安全和文化尊重禁止，且当地藏族视其为神山','海拔太高','没有登山队愿意去','政府怕出事'],a:0},
-{q:'"奋斗者号"从"蛟龙号"身上学到了什么？',o:['蛟龙号7000米级技术奠定基础，奋斗者号在此基础上突破万米，体现阶梯式进步','奋斗者号是全新设计','两者无关','奋斗者号是蛟龙号的翻版'],a:0}
-],
-言语理解:[
-{q:'"云南花卉占全国70%市场份额"这段文字中，作者用"但"字转折的目的是？',o:['指出优势背后的短板和问题，提示未来改进方向','否定前面的优势','强调市场份额不重要','说明不需要改进'],a:0},
-{q:'排序题中如果出现时间词的句子，一般如何处理？',o:['按时间先后顺序排在逻辑链中，时间在前可能在前面也可能在引出话题之后','放在最后','放在最前','放弃不做'],a:0},
-{q:'"中老铁路不仅是一条交通线，更是一条经济走廊。"这句中的"不仅...更是..."在逻辑上属于什么关系？',o:['递进关系，强调"更是"后面的内容更重要','并列关系','转折关系','因果关系'],a:0},
-{q:'文段第一句往往是主旨句还是引出话题？',o:['如果是总分结构就是主旨句，如果是引入式就需要看第二句是否承接','永远是主旨句','永远是引出话题','不重要'],a:0},
-{q:'细节判断题中"无中生有"和"偷换概念"哪个更常见？',o:['无中生有更常见，选项中出现了原文根本没有提到的内容','偷换概念更常见','一样常见','都不常见'],a:0}
-],
-判断推理:[
-{q:'三段论"所有A是B，C是A，所以C是B"中，如果C不是A会犯什么错误？',o:['小项不当周延（三段论要求小前提必须肯定）','大项不当周延','中项不周延','四概念'],a:0},
-{q:'类比推理中"功能和对象"关系与"材料和产品"关系的区别是什么？',o:['前者强调功能用途，后者强调加工转化','没有区别','功能关系更高级','材料关系更简单'],a:0},
-{q:'削弱题中"因果倒置"和"他因削弱"哪个削弱力度更强？',o:['因果倒置（指出原因和结果颠倒）力度最强，因为直接否定因果关系','他因削弱更强','一样强','都不强'],a:0},
-{q:'加强题中"补充前提"和"补充正向证据"哪个加强力度更强？',o:['补充前提（指出论证必不可少的前提）加强力度最强','补充正向证据更强','一样','都不强'],a:0},
-{q:'定义判断中"种差+属概念"的结构是什么意思？',o:['定义=被定义项所属的大类（属）+与其他同类不同的特征（种差）','种差更重要','属概念更重要','两者无关'],a:0}
-],
-数量关系:[
-{q:'工程问题中赋值总量为公倍数的原理是什么？',o:['将抽象的工作量设为具体数值，使效率计算从分数变成整数，简化计算','设任意数都可以','越大越好','越小越好'],a:0},
-{q:'利润率计算为什么用利润÷成本而非利润÷售价？',o:['利润率反映投入资金的回报率，成本是投入额，售价是产出额','用售价也行','用成本更简单','用售价更准确'],a:0},
-{q:'容斥原理中"既A又B"被重复计算了，应该如何处理？',o:['先加A和B再减去重叠部分（既A又B），多退少补','加两次重叠','不用管','乘以2'],a:0},
-{q:'十字交叉法适用于什么类型的浓度问题？',o:['两种不同浓度的溶液混合成中间浓度，质量与浓度差成反比','所有浓度问题','仅适用于一种溶液','不适用于酒精'],a:0},
-{q:'平均增长率公式中（1+r）^n的计算如何快速估算？',o:['记住常见值：1.1^3=1.331，1.2^3=1.728，结合选项排除','需要计算器','无法估算','必须精确计算'],a:0}
-],
-资料分析:[
-{q:'增长率计算中"增速提高/回落"和"增幅扩大/收窄"有什么区别？',o:['增速是百分比的变化，增幅是百分点差——如从8%到10%是增速提高2个百分点（增幅扩大2个百分点），前者是相对概念后者是绝对差值','二者相同','没有区别','增速比增幅重要'],a:0},
-{q:'基期量计算时为什么增长率要加1？',o:['现期量=基期量×(1+r)，所以基期量=现期量÷(1+r)，1代表100%基数','不需要加1','加0.1','除0.1'],a:0},
-{q:'比重变化判断中如何快速知道比重上升还是下降？',o:['部分增长率>整体增长率则比重上升，反之下降','计算全部数值','凭感觉','看数字大小'],a:0},
-{q:'年均增长率速算的常用近似公式是什么？',o:['当r较小时（<10%），(1+r)^n≈1+nr（偏小估算），可用于排除选项','就是算出来','没有近似公式','用二次方程'],a:0},
-{q:'资料分析中"单位陷阱"最常出现在什么题型？',o:['涉及"亿/万""元/美元""吨/万吨"等量级换算的题目，选项数值接近但单位不同','所有题型','只有计算题','只有判断题'],a:0}
-]};
-
-function gD(i){
-  var e=S.ws[i];var c=document.getElementById('dRc'+i);
-  if(!e.dc)e.dc=0;
-  var tpl=DT[e.ct]||DT['新思想'];var sd=e._ds||0;var qs=[];
-  for(var j=0;j<5;j++)qs.push(tpl[(sd*3+j*2)%tpl.length]);
-  e.dr=qs;
-  var pr=e.dc>=5?'<span style="color:var(--ok);font-weight:600">🎉 已答对5题</span>':'<span style="color:var(--t2);font-size:12px">进度：'+'★'.repeat(e.dc)+'☆'.repeat(5-e.dc)+' '+e.dc+'/5</span>';
-  c.innerHTML='<div style=margin-bottom:4px>'+pr+'</div>'+qs.map(function(q,j){
-    var qid='d_'+i+'_'+j;var wc=e._dd&&e._dd[qid]===true;var ww=e._dd&&e._dd[qid]===false;var dis=wc||ww||e.dc>=5;
-    return '<div style="padding:8px 0;border-bottom:1px solid var(--bd);opacity:'+(dis?0.6:1)+'"><div style=font-size:12px;font-weight:500;margin-bottom:4px>'+(j+1)+'. '+q.q+'</div><div style=display:grid;gap:3px>'+
-      q.o.map(function(o,k){return '<div class=oi'+(dis?' di':'')+(wc?' ok':'')+(ww?' wr':'')+' style="padding:5px 8px;font-size:12px" data-q="'+qid+'" data-k='+k+' onclick="if(!this.classList.contains(\'di\')){event.stopPropagation();document.querySelectorAll(\'[data-q=\\\"'+qid+'\\\"]\').forEach(function(e){e.classList.toggle(\'ok\',parseInt(e.dataset.k)===k)});dS[\''+qid+'\']=k}"><span class=ol style=width:20px;height:20px;font-size:10px>'+L[k]+'</span><span>'+o+'</span></div>'}).join('')+
-      '</div><div style=margin-top:4px;display:flex;gap:4px><button class="btn btn-sm btn-p" onclick="event.stopPropagation();cD(\''+qid+'\','+q.a+','+i+');return false"'+(dis?' disabled':'')+'>确认</button><span id="'+qid+'_r" style=font-size:12px;line-height:24px>'+(wc?'<span style="color:var(--ok);font-weight:600">✓</span>':ww?'<span style="color:var(--err);font-weight:600">✗</span>':'')+'</span></div></div>'
-  }).join('');
-}
-function cD(qid,cr,i){
-  var sl=dS[qid];var r=document.getElementById(qid+'_r');
-  if(sl===undefined){r.innerHTML='<span style="color:var(--t2)">先选</span>';return}
-  document.querySelectorAll('[data-q="'+qid+'"]').forEach(function(e){e.classList.add('di');if(parseInt(e.dataset.k)===cr)e.classList.add('ok');if(parseInt(e.dataset.k)===sl&&sl!==cr)e.classList.add('wr')});
-  var ok=sl===cr;r.innerHTML=ok?'<span style="color:var(--ok);font-weight:600">✓</span>':'<span style="color:var(--err);font-weight:600">✗</span>';
-  var e=S.ws[i];if(e){if(!e._dd)e._dd={};if(e._dd[qid]===undefined){e._dd[qid]=ok;
-    if(ok){e.dc=(e.dc||0)+1;if(e.dc>=5){e._dis=true;uE()}else gD(i)}
-    else{e.dc=0;e._dd={};e._ds=(e._ds||0)+1;setTimeout(function(){gD(i)},500)}
-  }}
-  sv();r.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
 // ===== EXPORT & SYNC =====
 function expC(){
   var raw=localStorage.getItem(SK);if(!raw){alert('无数据');return}
