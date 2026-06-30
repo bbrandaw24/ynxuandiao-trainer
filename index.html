@@ -732,25 +732,37 @@ function updateStats() {
 }
 
 function updateErrorList() {
-  const errs = state.wrongQuestions;
-  document.getElementById('errCountLabel').textContent = `(${errs.length})`;
+  const all = state.wrongQuestions;
+  const errs = all.filter(function(e){return !e._dismissed});
+  const dismissed = all.filter(function(e){return e._dismissed});
+  document.getElementById('errCountLabel').textContent = '(' + all.length + '，待消' + errs.length + ')';
   if (errs.length === 0) {
     document.getElementById('errorList').innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px 0;">暂无错题，继续加油！</p>';
     return;
   }
-  document.getElementById('errorList').innerHTML = errs.map((e,i) =>
-    `<div class="error-item" onclick="toggleErrorDetail(${i})">
-      <div class="error-q">[${e.cat}] ${e.q.length>40?e.q.slice(0,40)+'...':e.q}</div>
-      <div class="error-detail">你的答案：<span class="wrong-ans">${e.unknown?'❓不会':String.fromCharCode(65+e.selected)}</span> | 正确答案：<span class="right-ans">${String.fromCharCode(65+e.correct)}</span></div>
-      <div id="errDetail${i}" style="display:none;margin-top:8px;">
-        <p style="font-size:13px;color:var(--text-secondary);padding:8px;background:#f8f9fa;border-radius:6px;">${e.explanation}</p>
-        <div class="derived-questions" id="derived${i}">
-          <button class="btn btn-sm btn-primary" onclick="generateDerived(${i});event.stopPropagation();">🎯 生成5道衍生题</button>
-          <div id="derivedContent${i}"></div>
-        </div>
-      </div>
-    </div>`
-  ).join('');
+  var html = '';
+  errs.forEach(function(e,i) {
+    var realIdx = all.indexOf(e);
+    var prog = e.derivedCorrect ? '<span style="font-size:12px;color:var(--primary);margin-left:8px;">' + e.derivedCorrect + '/5</span>' : '';
+    html += '<div class="error-item" onclick="toggleErrorDetail(' + realIdx + ')">' +
+      '<div class="error-q">[' + e.cat + '] ' + (e.q.length>40?e.q.slice(0,40)+'...':e.q) + prog + '</div>' +
+      '<div class="error-detail">你的答案：<span class=\"wrong-ans\">' + (e.unknown?'不会':String.fromCharCode(65+e.selected)) + '</span> | 正确答案：<span class=\"right-ans\">' + String.fromCharCode(65+e.correct) + '</span></div>' +
+      '<div id="errDetail' + realIdx + '" style="display:none;margin-top:8px;">' +
+        '<p style="font-size:13px;color:var(--text-secondary);padding:8px;background:#f8f9fa;border-radius:6px;">' + e.explanation + '</p>' +
+        '<div class="derived-questions" id="derived' + realIdx + '">' +
+          '<button class="btn btn-sm btn-primary" onclick="generateDerived(' + realIdx + ');event.stopPropagation();">生成衍生题</button>' +
+          '<div id="derivedContent' + realIdx + '"></div>' +
+        '</div>' +
+      '</div></div>';
+  });
+  if (dismissed.length > 0) {
+    html += '<details style="margin-top:12px;"><summary style="font-size:13px;color:var(--text-secondary);cursor:pointer;">已消错题(' + dismissed.length + '道)</summary>';
+    dismissed.forEach(function(e) {
+      html += '<div style="padding:8px;font-size:13px;color:var(--text-secondary);border-bottom:1px solid var(--border);">[' + e.cat + '] ' + (e.q.length>50?e.q.slice(0,50)+'...':e.q) + ' <span style="color:var(--success);">已消</span></div>';
+    });
+    html += '</details>';
+  }
+  document.getElementById('errorList').innerHTML = html;
   refreshSocErrors();
 }
 
@@ -762,24 +774,34 @@ function toggleErrorDetail(idx) {
 function generateDerived(idx) {
   const e = state.wrongQuestions[idx];
   const container = document.getElementById(`derivedContent${idx}`);
-  // Force re-generate each time (don't cache)
-  const questions = generateDerivedQuestions(e);
-  e.derived = questions;
+  if (!e.derivedCorrect) e.derivedCorrect = 0;
+  if (!e._derivedInit) {
+    const questions = generateDerivedQuestions(e);
+    e.derived = questions;
+    e._derivedInit = true;
+  }
+  const questions = e.derived;
   const l = ['A','B','C','D'];
-  container.innerHTML = '<div style="margin-top:8px;font-weight:500;color:var(--primary);">📝 衍生练习（逐题作答）</div>' +
+  const progress = e.derivedCorrect >= 5
+    ? '<span style="color:var(--success);font-weight:600;">🎉 已答对5题，该错题可以消去</span>'
+    : `<span style="color:var(--text-secondary);font-size:13px;">答对进度：${'★'.repeat(e.derivedCorrect)}${'☆'.repeat(5-e.derivedCorrect)} ${e.derivedCorrect}/5</span>`;
+  container.innerHTML = `<div style="margin-bottom:6px;">${progress}</div>` +
     questions.map((q,i) => {
       const qid = `der_${idx}_${i}`;
-      return `<div class="derived-q" id="${qid}_wrap" style="padding:10px 0;border-bottom:1px solid var(--border);">
+      const wasCorrect = e._derivedDone && e._derivedDone[qid] === true;
+      const wasWrong = e._derivedDone && e._derivedDone[qid] === false;
+      const disabled = wasCorrect || wasWrong || e.derivedCorrect >= 5;
+      return `<div class="derived-q" id="${qid}_wrap" style="padding:10px 0;border-bottom:1px solid var(--border);opacity:${disabled?0.6:1};">
         <div style="font-size:13px;font-weight:500;margin-bottom:6px;">衍生${i+1}：${q.q}</div>
         <div style="display:grid;gap:4px;" id="${qid}_opts">
-          ${q.o.map((opt,oi) => `<div class="option-item" style="padding:6px 10px;font-size:13px;" data-q="${qid}" data-oi="${oi}" onclick="event.stopPropagation();selectDerivedOption('${qid}',${oi})">
+          ${q.o.map((opt,oi) => `<div class="option-item${disabled?' disabled':''}${wasCorrect?' correct':''}${wasWrong&&!q._prevSel?' wrong':''}" style="padding:6px 10px;font-size:13px;" data-q="${qid}" data-oi="${oi}" onclick="if(!this.classList.contains('disabled')){event.stopPropagation();selectDerivedOption('${qid}',${oi})}">
             <span class="option-label" style="width:22px;height:22px;font-size:11px;">${l[oi]}</span>
             <span>${opt}</span>
           </div>`).join('')}
         </div>
         <div style="margin-top:6px;display:flex;gap:6px;">
-          <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();checkDerived('${qid}',${q.a});return false;">确认答案</button>
-          <span id="${qid}_result" style="font-size:13px;line-height:28px;"></span>
+          <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();checkDerived('${qid}',${q.a},${idx});return false;"${disabled?' disabled':''}>确认答案</button>
+          <span id="${qid}_result" style="font-size:13px;line-height:28px;">${wasCorrect?'<span style=\"color:var(--success);font-weight:600;\">✓ 正确</span>':wasWrong?'<span style=\"color:var(--danger);font-weight:600;\">✗ 错误</span>':''}</span>
         </div>
       </div>`;
     }).join('');
@@ -793,7 +815,7 @@ function selectDerivedOption(qid, oi) {
   derSelected[qid] = oi;
 }
 
-function checkDerived(qid, correctIdx) {
+function checkDerived(qid, correctIdx, errIdx) {
   const sel = derSelected[qid];
   const result = document.getElementById(`${qid}_result`);
   if (sel === undefined) { result.innerHTML = '<span style="color:var(--text-secondary);">请先选择一个选项</span>'; return; }
@@ -806,7 +828,28 @@ function checkDerived(qid, correctIdx) {
   result.innerHTML = isCorrect
     ? '<span style="color:var(--success);font-weight:600;">✓ 正确</span>'
     : `<span style="color:var(--danger);font-weight:600;">✗ 错误，正确答案是 ${['A','B','C','D'][correctIdx]}</span>`;
-  // Scroll smoothly to keep result visible
+
+  // Track derived correct count
+  const e = state.wrongQuestions[errIdx];
+  if (e) {
+    if (!e._derivedDone) e._derivedDone = {};
+    if (e._derivedDone[qid] === undefined) {
+      e._derivedDone[qid] = isCorrect;
+      if (isCorrect) {
+        if (!e.derivedCorrect) e.derivedCorrect = 0;
+        e.derivedCorrect++;
+        // Re-render to update progress
+        generateDerived(errIdx);
+        // If 5 correct, dismiss the error
+        if (e.derivedCorrect >= 5) {
+          e._dismissed = true;
+          updateErrorList();
+        }
+      }
+    }
+  }
+
+  saveState();
   result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -924,6 +967,7 @@ function clearAllStats() {
   });
   state.wrongQuestions = [];
   state.socraticDialogues = [];
+  state.doneSet = {};
   saveState();
   updateStats();
   updateErrorList();
