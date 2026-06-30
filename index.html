@@ -96,10 +96,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans S
 <button class="btn btn-warn" id=dkBtn onclick=markUnknown()>❓ 不会</button>
 <span id=nextHint style=font-size:13px;color:var(--text2);display:none>点击任意选项 → 下一题</span>
 <button class="btn btn-sm btn-pri" onclick=exportClip() style=margin-left:auto>📋 导出</button>
-<button class="btn btn-sm btn-pri" onclick=exportGit(this)>📤 同步GitHub</button>
-<button class="btn btn-sm btn-danger" onclick=resetProgress() style=margin-left:8px>🔄 重置做题</button>
-<button class="btn btn-sm btn-danger" onclick=resetAll()>重置统计</button>
-</div>
+        <button class="btn btn-sm btn-pri" onclick=exportGit(this)>📤 同步GitHub</button>
+      </div>
 <div class=expl-box id=explBox><strong>解析：</strong><span id=explText></span></div>
 </div>
 
@@ -326,7 +324,7 @@ function loadQ(){
   var dk=function(i){return st.cat+'_'+i};
   var done=qs.filter(function(_,i){return st.dones[dk(i)]}).length;
   if(done>=qs.length){
-    document.getElementById('qContent').innerHTML='<p style="text-align:center;padding:60px 20px;font-size:18px;">🎉 全部完成！<br><span style="font-size:14px;color:var(--text2);">切换其他模块或重置做题。</span></p>';
+    document.getElementById('qContent').innerHTML='<p style="text-align:center;padding:60px 20px;font-size:18px;">🎉 全部完成！<br><span style="font-size:14px;color:var(--text2);">切换其他模块继续刷题。</span></p>';
     document.getElementById('optArea').innerHTML='';document.getElementById('actionBar').style.display='none';document.getElementById('explBox').classList.remove('show');
     document.getElementById('qProg').textContent='已完成 '+done+'/'+qs.length;return;
   }
@@ -438,14 +436,6 @@ function chkDer(qid,cor,i){
     else{e.dc=0;e._dd={};e._di=false;e._ds=(e._ds||0)+1;setTimeout(function(){genDer(i)},500)}
   }}
   save();r.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-// ===== RESET =====
-function resetProgress(){if(!confirm('重置做题进度？错题和统计保留。'))return;st.dones={};st.idx=0;save();loadQ()}
-function resetAll(){
-  if(!confirm('重置所有统计数据？错题也将清空。'))return;
-  Object.keys(st.history).forEach(function(c){st.history[c]={total:0,correct:0,wrong:0,errors:[]}});
-  st.wrongs=[];st.socs=[];st.dones={};save();upStats();upErrs()
 }
 
 // ===== EXPORT =====
