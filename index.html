@@ -211,7 +211,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
         <button class="btn btn-primary" onclick="submitAnswer()">提交答案</button>
         <button class="btn btn-warning" id="dontKnowBtn" onclick="markAsUnknown()">❓ 不会</button>
         <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
-        <button class="btn btn-sm btn-primary" onclick="exportData()" style="margin-left:8px;">📤 导出到GitHub</button>
+        <button class="btn btn-sm btn-primary" onclick="exportToClipboard()">📋 导出剪贴板</button>
+        <button class="btn btn-sm btn-primary" onclick="exportData(this)">📤 同步GitHub</button>
         <button class="btn btn-danger btn-sm" onclick="resetDoneQuestions()" style="margin-left:8px;">🔄 重置做题</button>
         <button class="btn btn-danger btn-sm" onclick="clearAllStats()" style="margin-left:auto;">重置统计</button>
       </div>
@@ -935,11 +936,43 @@ function resetDoneQuestions() {
   loadQuestion();
 }
 
-function exportData() {
-  const btn = document.querySelector('#actionBar .btn-primary');
+function exportToClipboard() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) { alert('没有数据可导出'); return; }
+  const data = JSON.parse(raw);
+  const l = ['A','B','C','D'];
+  let report = '===== 云南选调训练系统 - 做题报告 =====\n';
+  report += `导出时间：${new Date().toLocaleString('zh-CN')}\n\n`;
+
+  report += '【各模块统计】\n';
+  let tQ=0, tC=0, tW=0;
+  Object.entries(data.history||{}).forEach(([cat,h]) => {
+    report += `  ${cat}：共${h.total}题 | 正确${h.correct} | 错误${h.wrong} | 正确率${h.total?Math.round(h.correct/h.total*100)+'%':'0%'}\n`;
+    tQ+=h.total; tC+=h.correct; tW+=h.wrong;
+  });
+  report += `  总计：${tQ}题 | 正确${tC} | 错误${tW} | 正确率${tQ?Math.round(tC/tQ*100)+'%':'0%'}\n\n`;
+
+  const wrongs = data.wrongQuestions||[];
+  report += `【错题（${wrongs.length}道）】\n`;
+  wrongs.forEach((e,i) => {
+    const ans = e.unknown?'我不会':l[e.selected];
+    report += `  ${i+1}. [${e.cat}] ${e.q.slice(0,50)}...\n    你: ${ans} | 对: ${l[e.correct]}\n`;
+  });
+
+  navigator.clipboard.writeText(report).then(() => {
+    alert('报告已复制到剪贴板！');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = report; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('已复制到剪贴板！');
+  });
+}
+
+function exportData(btn) {
+  if (!btn) btn = document.querySelector('[onclick*=\"exportData\"]');
   const orig = btn.textContent;
-  btn.textContent = '⏳ 正在同步...';
-  btn.disabled = true;
+  btn.textContent = '⏳...'; btn.disabled = true;
 
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) { alert('没有数据可导出'); btn.textContent=orig; btn.disabled=false; return; }
