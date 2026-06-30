@@ -759,10 +759,8 @@ function toggleErrorDetail(idx) {
 
 function generateDerived(idx) {
   const e = state.wrongQuestions[idx];
-  const container = document.getElementById(`derivedContent${i}`);
-  // Only generate if not already generated
-  if (e._derivedGenerated) return;
-  e._derivedGenerated = true;
+  const container = document.getElementById(`derivedContent${idx}`);
+  // Force re-generate each time (don't cache)
   const questions = generateDerivedQuestions(e);
   e.derived = questions;
   const l = ['A','B','C','D'];
