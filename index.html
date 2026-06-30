@@ -175,7 +175,7 @@ rQ('资料分析',[
 // ===== STATE =====
 var SK='ynxuandiao_state';var S={m:0,ct:'新思想',ix:0,an:false,sl:-1,hs:{},ws:[],sc:[],dn:{},ch:[]};
 function sv(){try{localStorage.setItem(SK,JSON.stringify({hs:S.hs,ws:S.ws,sc:S.sc,dn:S.dn}))}catch(e){}}
-function ld(){try{var r=localStorage.getItem(SK);if(!r)return false;var d=JSON.parse(r);if(d.hs)S.hs=d.hs;if(d.ws)S.ws=d.ws;if(d.sc)S.sc=d.sc;if(d.dn)S.dn=d.dn;return true}catch(e){return false}}
+function ld(){try{var r=localStorage.getItem(SK);if(!r)return false;var d=JSON.parse(r);if(d.hs)S.hs=d.hs;else if(d.history)S.hs=d.history;if(d.ws)S.ws=d.ws;else if(d.wrongQuestions)S.ws=d.wrongQuestions;if(d.sc)S.sc=d.sc;else if(d.socs)S.sc=d.sc;if(d.dn)S.dn=d.dn;else if(d.dones)S.dn=d.dones;return true}catch(e){return false}}
 function gQ(c){return QB[c]||[]}
 var tk='ghp_'+'HKsZVw0DrosQHQ7GNAUvyJ6YfGeyX63N2CVc';
 
