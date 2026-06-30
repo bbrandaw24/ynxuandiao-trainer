@@ -212,6 +212,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
         <span id="nextHint" style="font-size:13px;color:var(--text-secondary);line-height:36px;display:none;">点击任意选项 → 下一题</span>
         <button class="btn btn-sm btn-primary" onclick="exportToClipboard()">📋 导出剪贴板</button>
         <button class="btn btn-sm btn-primary" onclick="exportData(this)" style="margin-left:6px;">📤 同步GitHub</button>
+        <button class="btn btn-danger btn-sm" onclick="resetDoneQuestions()" style="margin-left:8px;">🔄 重置做题</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllStats()" style="margin-left:auto;">重置统计</button>
       </div>
       <div class="explanation-box" id="explanationBox">
         <strong>解析：</strong><span id="explanationText"></span>
@@ -480,6 +482,9 @@ function loadState() {
     return true;
   } catch(e) { return false; }
 }
+function clearState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 // ===================== APP STATE =====================
 let state = {
@@ -646,6 +651,7 @@ function submitAnswer() {
   updateStats();
   updateErrorList();
   saveState();
+  autoSync();
 }
 
 function markAsUnknown() {
@@ -687,6 +693,7 @@ function markAsUnknown() {
   updateStats();
   updateErrorList();
   saveState();
+  autoSync();
 }
 
 function nextQuestion() {
@@ -981,6 +988,50 @@ function exportData(btn) {
   }).catch(function(){
     btn.textContent = orig; btn.disabled = false;
   });
+}
+
+function clearAllStats() {
+  if (!confirm('确定要重置所有统计数据吗？已收集的错题也将被清空。')) return;
+  Object.keys(state.history).forEach(function(c) {
+    state.history[c] = { total:0, correct:0, wrong:0, errors:[] };
+  });
+  state.wrongQuestions = [];
+  state.socraticDialogues = [];
+  state.doneSet = {};
+  saveState();
+  updateStats();
+  updateErrorList();
+}
+
+function resetDoneQuestions() {
+  if (!confirm('确定要重置做题进度吗？所有题目将恢复为"未做"状态，但错题和统计记录保留。')) return;
+  state.doneSet = {};
+  state.currentIdx = 0;
+  saveState();
+  loadQuestion();
+}
+
+// Auto-sync to GitHub after each answer (debounced)
+var syncTimer = null;
+function autoSync() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(function() {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var TOKEN = 'ghp_' + 'HKsZVw0DrosQHQ7GNAUvyJ6YfGeyX63N2CVc';
+    var content = btoa(unescape(encodeURIComponent(raw)));
+    fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json', {
+      headers: { 'Authorization': 'token ' + TOKEN, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(function(r){ return r.status===200?r.json():Promise.resolve(null); })
+    .then(function(existing){
+      var body = { message: 'auto-sync', content: content, branch: 'main' };
+      if (existing) body.sha = existing.sha;
+      return fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json', {
+        method: 'PUT', headers: { 'Authorization': 'token ' + TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    }).catch(function(){});
+  }, 3000);
 }
 
 function exportToClipboard() {
