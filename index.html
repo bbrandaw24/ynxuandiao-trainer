@@ -208,7 +208,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
       </div>
       <div id="optionArea"></div>
       <div class="action-bar" id="actionBar" style="display:none;">
-        <button class="btn btn-primary" onclick="submitAnswer()">提交答案</button>
         <button class="btn btn-warning" id="dontKnowBtn" onclick="markAsUnknown()">❓ 不会</button>
         <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
         <button class="btn btn-sm btn-primary" onclick="exportToClipboard()">📋 导出剪贴板</button>
@@ -582,8 +581,6 @@ function loadQuestion() {
   ).join('')}</div>`;
 
   document.getElementById('actionBar').style.display = 'flex';
-  document.querySelector('#actionBar .btn-primary').disabled = false;
-  document.querySelector('#actionBar .btn-primary').textContent = '提交答案';
   const dkBtn = document.getElementById('dontKnowBtn');
   dkBtn.disabled = false; dkBtn.textContent = '❓ 不会';
   document.getElementById('explanationBox').classList.remove('show');
@@ -600,11 +597,9 @@ function markDone(idx) {
 let selectedOption = -1;
 function selectOption(idx) {
   if (state.answered) return;
-  document.querySelectorAll('.option-item').forEach((el,i) => {
-    el.classList.toggle('selected', i===idx);
-  });
   selectedOption = idx;
-  document.querySelector('#actionBar .btn-primary').disabled = idx === -1;
+  // Auto-submit on click, no extra confirmation needed
+  submitAnswer();
 }
 
 function submitAnswer() {
@@ -646,9 +641,6 @@ function submitAnswer() {
   // Show explanation
   document.getElementById('explanationText').textContent = q.e;
   document.getElementById('explanationBox').classList.add('show');
-
-  document.querySelector('#actionBar .btn-primary').textContent = isCorrect ? '✅ 正确' : '❌ 错误';
-  document.querySelector('#actionBar .btn-primary').disabled = true;
 
   updateStats();
   updateErrorList();
