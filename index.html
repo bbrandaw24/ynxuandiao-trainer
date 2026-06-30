@@ -759,19 +759,52 @@ function toggleErrorDetail(idx) {
 
 function generateDerived(idx) {
   const e = state.wrongQuestions[idx];
-  const container = document.getElementById(`derivedContent${idx}`);
+  const container = document.getElementById(`derivedContent${i}`);
+  // Only generate if not already generated
+  if (e._derivedGenerated) return;
+  e._derivedGenerated = true;
   const questions = generateDerivedQuestions(e);
   e.derived = questions;
-  container.innerHTML = '<div style="margin-top:8px;font-weight:500;color:var(--primary);">📝 衍生练习（基于该错题）：</div>' +
-    questions.map((q,i) =>
-      `<div class="derived-q">
-        <strong>衍生${i+1}：</strong>${q.q}
-        <br><span style="color:var(--text-secondary);font-size:12px;">
-          A.${q.o[0]} | B.${q.o[1]} | C.${q.o[2]} | D.${q.o[3]}
-          &nbsp;&nbsp;<span style="color:var(--success);">答案：${String.fromCharCode(65+q.a)}</span>
-        </span>
-      </div>`
-    ).join('');
+  const l = ['A','B','C','D'];
+  container.innerHTML = '<div style="margin-top:8px;font-weight:500;color:var(--primary);">📝 衍生练习（逐题作答）</div>' +
+    questions.map((q,i) => {
+      const qid = `der_${idx}_${i}`;
+      return `<div class="derived-q" id="${qid}_wrap" style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:500;margin-bottom:6px;">衍生${i+1}：${q.q}</div>
+        <div style="display:grid;gap:4px;" id="${qid}_opts">
+          ${q.o.map((opt,oi) => `<div class="option-item" style="padding:6px 10px;font-size:13px;" data-q="${qid}" data-oi="${oi}" onclick="selectDerivedOption('${qid}',${oi})">
+            <span class="option-label" style="width:22px;height:22px;font-size:11px;">${l[oi]}</span>
+            <span>${opt}</span>
+          </div>`).join('')}
+        </div>
+        <div style="margin-top:6px;display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" onclick="checkDerived('${qid}',${q.a})">确认答案</button>
+          <span id="${qid}_result" style="font-size:13px;line-height:28px;"></span>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+let derSelected = {};
+function selectDerivedOption(qid, oi) {
+  document.querySelectorAll(`[data-q="${qid}"]`).forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.oi) === oi);
+  });
+  derSelected[qid] = oi;
+}
+
+function checkDerived(qid, correctIdx) {
+  const sel = derSelected[qid];
+  const result = document.getElementById(`${qid}_result`);
+  if (sel === undefined) { result.innerHTML = '<span style="color:var(--text-secondary);">请先选择一个选项</span>'; return; }
+  document.querySelectorAll(`[data-q="${qid}"]`).forEach(el => {
+    el.classList.add('disabled');
+    if (parseInt(el.dataset.oi) === correctIdx) el.classList.add('correct');
+    if (parseInt(el.dataset.oi) === sel && sel !== correctIdx) el.classList.add('wrong');
+  });
+  result.innerHTML = sel === correctIdx
+    ? '<span style="color:var(--success);font-weight:600;">✓ 正确</span>'
+    : `<span style="color:var(--danger);font-weight:600;">✗ 错误，正确答案是 ${['A','B','C','D'][correctIdx]}</span>`;
 }
 
 function generateDerivedQuestions(err) {
