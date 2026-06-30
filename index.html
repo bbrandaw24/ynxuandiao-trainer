@@ -211,6 +211,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
         <button class="btn btn-primary" onclick="submitAnswer()">提交答案</button>
         <button class="btn btn-warning" id="dontKnowBtn" onclick="markAsUnknown()">❓ 不会</button>
         <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
+        <button class="btn btn-sm btn-primary" onclick="exportData()" style="margin-left:8px;">📤 导出数据</button>
         <button class="btn btn-danger btn-sm" onclick="resetDoneQuestions()" style="margin-left:8px;">🔄 重置做题</button>
         <button class="btn btn-danger btn-sm" onclick="clearAllStats()" style="margin-left:auto;">重置统计</button>
       </div>
@@ -896,6 +897,58 @@ function resetDoneQuestions() {
   state.currentIdx = 0;
   saveState();
   loadQuestion();
+}
+
+function exportData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) { alert('没有数据可导出'); return; }
+    // Build a readable report
+    const data = JSON.parse(raw);
+    let report = '===== 云南选调训练系统 - 做题报告 =====\n\n';
+    report += `导出时间：${new Date().toLocaleString('zh-CN')}\n\n`;
+
+    // Per-category stats
+    report += '【各模块统计】\n';
+    let totalQ=0, totalC=0, totalW=0;
+    Object.entries(data.history || {}).forEach(([cat, h]) => {
+      report += `  ${cat}：共${h.total}题 | 正确${h.correct} | 错误${h.wrong} | 正确率${h.total?Math.round(h.correct/h.total*100)+'%':'0%'}\n`;
+      totalQ+=h.total; totalC+=h.correct; totalW+=h.wrong;
+    });
+    report += `  ─────────────────\n`;
+    report += `  总计：${totalQ}题 | 正确${totalC} | 错误${totalW} | 正确率${totalQ?Math.round(totalC/totalQ*100)+'%':'0%'}\n\n`;
+
+    // Done progress
+    const doneKeys = Object.keys(data.doneSet || {});
+    report += `【做题进度】已完成 ${doneKeys.length} 道题\n\n`;
+
+    // Wrong questions
+    const wrongs = data.wrongQuestions || [];
+    report += `【错题列表（${wrongs.length}道）】\n`;
+    const l = ['A','B','C','D'];
+    wrongs.forEach((e,i) => {
+      report += `  ${i+1}. [${e.cat}] ${e.q.slice(0,80)}\n`;
+      report += `     你的答案：${e.unknown?'❓不会':l[e.selected]} | 正确答案：${l[e.correct]}\n`;
+    });
+    if (wrongs.length === 0) report += '  （暂无错题）\n';
+    report += '\n===== 报告结束 =====';
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(report).then(() => {
+      alert('✅ 报告已复制到剪贴板！粘贴到聊天中即可分析。');
+    }).catch(() => {
+      // Fallback: show in textarea
+      const ta = document.createElement('textarea');
+      ta.value = report;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert('✅ 报告已复制到剪贴板！');
+    });
+  } catch(e) {
+    alert('导出失败：'+e.message);
+  }
 }
 
 // ===================== SOCRATIC MODE — DIALOGUE REVIEW ONLY =====================
