@@ -211,6 +211,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
         <button class="btn btn-primary" onclick="submitAnswer()">提交答案</button>
         <button class="btn btn-warning" id="dontKnowBtn" onclick="markAsUnknown()">❓ 不会</button>
         <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
+        <button class="btn btn-danger btn-sm" onclick="resetDoneQuestions()" style="margin-left:8px;">🔄 重置做题</button>
         <button class="btn btn-danger btn-sm" onclick="clearAllStats()" style="margin-left:auto;">重置统计</button>
       </div>
       <div class="explanation-box" id="explanationBox">
@@ -462,7 +463,8 @@ function saveState() {
     const data = {
       history: state.history,
       wrongQuestions: state.wrongQuestions,
-      socraticDialogues: state.socraticDialogues
+      socraticDialogues: state.socraticDialogues,
+      doneSet: state.doneSet
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch(e) { /* ignore storage errors */ }
@@ -475,6 +477,7 @@ function loadState() {
     if (data.history) state.history = data.history;
     if (data.wrongQuestions) state.wrongQuestions = data.wrongQuestions;
     if (data.socraticDialogues) state.socraticDialogues = data.socraticDialogues;
+    if (data.doneSet) state.doneSet = data.doneSet;
     return true;
   } catch(e) { return false; }
 }
@@ -491,13 +494,14 @@ let state = {
   answered: false,
   wrongQuestions: [],  // aggregated all errors
   socraticDialogues: [],
+  doneSet: {},  // "cat_idx" → true for answered questions
 };
 
 function init() {
   // Init categories
   const cats = Object.keys(questionBank);
   const tabs = document.getElementById('categoryTabs');
-  tabs.innerHTML = cats.map(c => `<button class="nav-tab${c===state.currentCat?' active':''}" onclick="switchCategory('${c}')">${c}</button>`).join('');
+  tabs.innerHTML = cats.map(c => `<button class="nav-tab${c===state.currentCat?' active':''}" onclick="switchToCategory('${c}')">${c}</button>`).join('');
 
   // Restore saved state
   const restored = loadState();
@@ -534,15 +538,36 @@ function loadQuestion() {
     return;
   }
 
-  // Reset if needed
-  if (state.currentIdx >= qs.length) state.currentIdx = 0;
+  // Find next undone question
+  const doneKey = (idx) => `${state.currentCat}_${idx}`;
+  let startIdx = state.currentIdx;
+  // scan from currentIdx forward, wrap around, but stop after a full loop
+  for (let offset = 0; offset < qs.length; offset++) {
+    const idx = (startIdx + offset) % qs.length;
+    if (!state.doneSet[doneKey(idx)]) {
+      state.currentIdx = idx;
+      break;
+    }
+  }
+
+  // If all done, show completion
+  const total = qs.length;
+  const doneCount = qs.filter((_,i) => state.doneSet[doneKey(i)]).length;
+  if (doneCount >= total) {
+    document.getElementById('qContent').innerHTML = '<p style="text-align:center;padding:60px 20px;font-size:18px;">🎉 该模块全部题目已完成！<br><span style="font-size:14px;color:var(--text-secondary);">切换其他模块继续刷题，或点击"重置做题记录"重新开始。</span></p>';
+    document.getElementById('optionArea').innerHTML = '';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('explanationBox').classList.remove('show');
+    document.getElementById('qProgress').textContent = `已完成 ${doneCount}/${total}`;
+    return;
+  }
 
   const q = qs[state.currentIdx];
   document.getElementById('qContent').innerHTML = `<p style="font-size:16px;font-weight:500;line-height:1.8;">${q.q}</p>`;
   document.getElementById('qCategory').textContent = state.currentCat;
   document.getElementById('qCategory').style.background = getCatColor(state.currentCat, 'bg');
   document.getElementById('qCategory').style.color = getCatColor(state.currentCat, 'text');
-  document.getElementById('qProgress').textContent = `第 ${state.currentIdx+1}/${qs.length} 题`;
+  document.getElementById('qProgress').textContent = `第 ${doneCount+1}/${total} 题（未做）`;
 
   const labels = ['A','B','C','D'];
   const optionArea = document.getElementById('optionArea');
@@ -560,10 +585,13 @@ function loadQuestion() {
   dkBtn.disabled = false; dkBtn.textContent = '❓ 不会';
   document.getElementById('explanationBox').classList.remove('show');
 
-  // Reset option states
   document.querySelectorAll('.option-item').forEach(el => {
     el.classList.remove('selected','correct','wrong','disabled');
   });
+}
+
+function markDone(idx) {
+  state.doneSet[`${state.currentCat}_${idx}`] = true;
 }
 
 let selectedOption = -1;
@@ -610,6 +638,7 @@ function submitAnswer() {
     h.errors.push(err);
     state.wrongQuestions.push(err);
   }
+  markDone(state.currentIdx);
 
   // Show explanation
   document.getElementById('explanationText').textContent = q.e;
@@ -651,6 +680,7 @@ function markAsUnknown() {
   };
   h.errors.push(err);
   state.wrongQuestions.push(err);
+  markDone(state.currentIdx);
 
   document.getElementById('explanationText').textContent = q.e;
   document.getElementById('explanationBox').classList.add('show');
@@ -664,12 +694,13 @@ function markAsUnknown() {
 
 function nextQuestion() {
   const qs = getQuestions(state.currentCat);
+  // Advance by 1, then loadQuestion will auto-skip to next undone
   state.currentIdx = (state.currentIdx + 1) % qs.length;
   selectedOption = -1;
   loadQuestion();
 }
 
-function switchCategory(cat) {
+function switchToCategory(cat) {
   state.currentCat = cat;
   state.currentIdx = 0;
   selectedOption = -1;
@@ -857,6 +888,14 @@ function clearAllStats() {
   saveState();
   updateStats();
   updateErrorList();
+}
+
+function resetDoneQuestions() {
+  if (!confirm('确定要重置做题进度吗？所有题目将恢复为"未做"状态，但错题和统计记录保留。')) return;
+  state.doneSet = {};
+  state.currentIdx = 0;
+  saveState();
+  loadQuestion();
 }
 
 // ===================== SOCRATIC MODE — DIALOGUE REVIEW ONLY =====================
