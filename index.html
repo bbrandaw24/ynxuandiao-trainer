@@ -209,7 +209,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto
       <div id="optionArea"></div>
       <div class="action-bar" id="actionBar" style="display:none;">
         <button class="btn btn-warning" id="dontKnowBtn" onclick="markAsUnknown()">❓ 不会</button>
-        <button class="btn btn-secondary" onclick="nextQuestion()">下一题 →</button>
+        <span id="nextHint" style="font-size:13px;color:var(--text-secondary);line-height:36px;display:none;">点击任意选项 → 下一题</span>
         <button class="btn btn-sm btn-primary" onclick="exportToClipboard()">📋 导出剪贴板</button>
         <button class="btn btn-sm btn-primary" onclick="exportData(this)">📤 同步GitHub</button>
         <button class="btn btn-danger btn-sm" onclick="resetDoneQuestions()" style="margin-left:8px;">🔄 重置做题</button>
@@ -581,6 +581,7 @@ function loadQuestion() {
   ).join('')}</div>`;
 
   document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('nextHint').style.display = 'none';
   const dkBtn = document.getElementById('dontKnowBtn');
   dkBtn.disabled = false; dkBtn.textContent = '❓ 不会';
   document.getElementById('explanationBox').classList.remove('show');
@@ -596,7 +597,11 @@ function markDone(idx) {
 
 let selectedOption = -1;
 function selectOption(idx) {
-  if (state.answered) return;
+  if (state.answered) {
+    // After answering, any click goes to next question
+    nextQuestion();
+    return;
+  }
   selectedOption = idx;
   // Auto-submit on click, no extra confirmation needed
   submitAnswer();
@@ -641,6 +646,7 @@ function submitAnswer() {
   // Show explanation
   document.getElementById('explanationText').textContent = q.e;
   document.getElementById('explanationBox').classList.add('show');
+  document.getElementById('nextHint').style.display = 'inline';
 
   updateStats();
   updateErrorList();
@@ -680,6 +686,7 @@ function markAsUnknown() {
 
   document.getElementById('explanationText').textContent = q.e;
   document.getElementById('explanationBox').classList.add('show');
+  document.getElementById('nextHint').style.display = 'inline';
   document.getElementById('dontKnowBtn').disabled = true;
   document.getElementById('dontKnowBtn').textContent = '❓ 已标记不会';
 
