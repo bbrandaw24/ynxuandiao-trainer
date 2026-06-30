@@ -256,7 +256,7 @@ function uE(){
   document.getElementById('erLst').innerHTML=h;
 }
 function tE(i){var e=document.getElementById('eD'+i);e.style.display=e.style.display==='none'?'block':'none'}
-function rmE(i){if(!confirm('删除这条错题？'))return;S.ws.splice(i,1);uE();sv()}
+function rmE(i){if(!confirm('删除这条错题？'))return;S.ws.splice(i,1);uE();sv();pushGit()}
 
 // ===== DERIVED =====
 // ===== EXPORT & SYNC =====
@@ -277,11 +277,18 @@ function expG(b){
   .then(function(ex){var bd={message:'sync',content:c,branch:'main'};if(ex)bd.sha=ex.sha;return fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json',{method:'PUT',headers:{'Authorization':'token '+T,'Content-Type':'application/json'},body:JSON.stringify(bd)})})
   .then(function(){b.textContent='OK';setTimeout(function(){b.textContent=o;b.disabled=false},2000)}).catch(function(){b.textContent=o;b.disabled=false});
 }
+function pushGit(){
+  var raw=localStorage.getItem(SK);if(!raw)return;
+  var T=tk;var c=btoa(unescape(encodeURIComponent(raw)));
+  fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json',{headers:{'Authorization':'token '+T,'Accept':'application/vnd.github.v3+json'}})
+  .then(function(r){return r.status===200?r.json():null})
+  .then(function(ex){var bd={message:'sync',content:c,branch:'main'};if(ex)bd.sha=ex.sha;return fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json',{method:'PUT',headers:{'Authorization':'token '+T,'Content-Type':'application/json'},body:JSON.stringify(bd)})}).catch(function(){});
+}
 function restoreGit(){
   var T=tk;
   fetch('https://api.github.com/repos/bbrandaw24/ynxuandiao-trainer/contents/data/quiz_data.json',{headers:{'Authorization':'token '+T,'Accept':'application/vnd.github.v3+json'}})
   .then(function(r){if(r.status!==200)throw new Error('无数据');return r.json()})
-  .then(function(d){localStorage.setItem(SK,atob(d.content));alert('✅ 已从GitHub恢复数据，刷新页面生效')})
+  .then(function(d){var raw=decodeURIComponent(escape(atob(d.content)));localStorage.setItem(SK,raw);alert('✅ 已从GitHub恢复数据，刷新页面生效')})
   .catch(function(e){alert('恢复失败：'+e.message)});
 }
 function aSync(){
