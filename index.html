@@ -308,6 +308,8 @@ function load(){
     if(d.wrongs)st.wrongs=d.wrongs;else if(d.ws)st.wrongs=d.ws;
     if(d.socs)st.socs=d.socs;else if(d.sc)st.socs=d.sc;
     if(d.dones)st.dones=d.dones;else if(d.dn)st.dones=d.dn;
+    // Fix garbled keys
+    (function(fixK){for(var k in st.history){var nk=fixK(k);if(nk!==k){st.history[nk]=st.history[k];delete st.history[k]}}for(var k in st.dones){var nk=fixK(k);if(nk!==k){st.dones[nk]=st.dones[k];delete st.dones[k]}}})(function(k){try{var dk=decodeURIComponent(escape(k));return dk!==k?dk:k}catch(e){return k}});
     return true;
   }catch(e){return false}
 }
